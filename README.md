@@ -2,7 +2,7 @@
 
 [![sitio](https://img.shields.io/badge/sitio-emas.lemeit.ar-009688?style=flat-square)](https://emas.lemeit.ar) [![docs](https://img.shields.io/badge/docs-wiki.lemeit.ar-009688?style=flat-square)](https://wiki.lemeit.ar/red-ambiental/02-ema-saladillo/) [![API](https://img.shields.io/badge/API-pública-FF5722?style=flat-square)](https://emas.lemeit.ar/api.html) [![licencia](https://img.shields.io/badge/licencia-MIT-009688?style=flat-square)](#licencia)
 
-Sistema de adquisición y visualización de datos meteorológicos de 4 estaciones automáticas en Saladillo, Buenos Aires, Argentina. Publicado en [emas.lemeit.ar](https://emas.lemeit.ar).
+Sistema de adquisición y visualización de datos meteorológicos de estaciones automáticas en Saladillo y 25 de Mayo, Buenos Aires, Argentina. Publicado en [emas.lemeit.ar](https://emas.lemeit.ar).
 
 Es uno de tres proyectos de monitoreo ambiental que comparten la misma infraestructura de Cloudflare (Pages + Workers + D1), pensados para integrarse a futuro: este (meteorología), [aq.lemeit.ar](https://aq.lemeit.ar) (calidad del aire, sensores PurpleAir) y [agua-saladillo](https://github.com/lemeit/agua-saladillo) (calidad del agua, en desarrollo, pensado para wq.lemeit.ar).
 
@@ -16,6 +16,9 @@ Es uno de tres proyectos de monitoreo ambiental que comparten la misma infraestr
 | **EMA-CFR** | Centro de Formación Rural | HTML scraping | -35.62236, -59.78359 |
 | **EMA-DC** | Defensa Civil — Aeródromo | OCR imagen Meteobridge | -35.60063, -59.81350 |
 | **EMA-CS** | Clima Saladillo — B° Falucho | JSON Meteotemplate | -35.64500, -59.77580 |
+| **EMA-25C** | 25Clima — 25 de Mayo (`IDEMAY14`) | API Weather Underground (PWS) | -35.435069, -60.170656 |
+
+**EMA-25C (septiembre 2026, en incorporación)**: primera estación fuera del partido de Saladillo — 25 de Mayo, muy cerca de la Esc. Ed. Artística N°1 "Lola Mora" (ya parte de la red de aq.lemeit.ar). No es una estación propia del proyecto: es la estación pública "25Clima" (25clima.ar), operada por N-TecLab/SS Desarrollos y registrada en Weather Underground con station ID `IDEMAY14`. Se consulta vía la API pública de PWS de Weather Underground (`scrapers/wu_25demayo.py`), con una API key propia (no la del sitio) — ver "Variables de entorno" abajo. Pendiente: confirmar con el operador antes de darle carácter permanente/oficial en el dashboard, ya que la estación no es del proyecto.
 
 ## Arquitectura
 
@@ -39,6 +42,7 @@ Hasta agosto de 2026 la base de datos era Supabase (PostgreSQL), con 4 tablas se
 | `scrapers/cfr_saladillo.py` | EMA-CFR | Scraping HTML con BeautifulSoup |
 | `scrapers/dc_saladillo.py` | EMA-DC | OCR con Tesseract sobre imagen JPG |
 | `scrapers/cs_saladillo.py` | EMA-CS | Endpoint JSON de Meteotemplate |
+| `scrapers/wu_25demayo.py` | EMA-25C | API pública v2 de Weather Underground (PWS `IDEMAY14`), estación de terceros |
 | `scrapers/d1_writer.py` | — | Helper compartido: escribe en D1 vía la API HTTP de Cloudflare |
 | `scrapers/supabase_ping.py` | — | Ping diario a Supabase (proyecto compartido con otras apps personales, no relacionado a EMA) |
 
@@ -51,12 +55,16 @@ pip install -r requirements.txt
 
 ## Variables de entorno (GitHub Actions)
 
-Los 4 scrapers escriben en D1 a través de la API HTTP de Cloudflare (`scrapers/d1_writer.py`). Se configuran como secrets del repositorio:
+Los scrapers escriben en D1 a través de la API HTTP de Cloudflare (`scrapers/d1_writer.py`). Se configuran como secrets del repositorio (GitHub → repo → Settings → Secrets and variables → Actions → New repository secret):
 
 ```
 CF_ACCOUNT_ID=...
 CF_DATABASE_ID=b5b1eef7-5c8d-42a8-a23e-69cd5ae1cd30
 CF_API_TOKEN=...   # con permiso D1:Edit
+WU_API_KEY=...     # API key propia de Weather Underground, solo para scrapers/wu_25demayo.py
+                    # (EMA-25C). Se genera gratis en wunderground.com sin necesitar una
+                    # estación física propia — no es la key embebida en 25clima.ar, esa no
+                    # se usa acá. Ver wiki para el paso a paso.
 ```
 
 `supabase_ping.py` sigue usando `SUPA_URL` / `SUPA_KEY` por separado — no tiene relación con EMA, solo mantiene activo el proyecto Supabase compartido con otras apps.

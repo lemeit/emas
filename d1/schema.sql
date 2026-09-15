@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS mediciones (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    estacion TEXT NOT NULL,        -- 'EMA-EET' | 'EMA-CFR' | 'EMA-DC' | 'EMA-CS'
+    estacion TEXT NOT NULL,        -- 'EMA-EET' | 'EMA-CFR' | 'EMA-DC' | 'EMA-CS' | 'EMA-25C'
     codigo INTEGER,                -- código de parámetro SNIH (solo EMA-EET)
     parametro TEXT NOT NULL,       -- nombre del parámetro, ej. "Temperatura"
     unidad TEXT,

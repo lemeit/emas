@@ -10,6 +10,7 @@ env:
   CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
   CF_DATABASE_ID: ${{ secrets.CF_DATABASE_ID }}
   CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+  WU_API_KEY: ${{ secrets.WU_API_KEY }}
 
 jobs:
   scrapers:
@@ -49,6 +50,10 @@ jobs:
 
       - name: EMA-CS
         run: python scrapers/cs_saladillo.py
+        continue-on-error: true
+
+      - name: EMA-25C
+        run: python scrapers/wu_25demayo.py
         continue-on-error: true
 
   ping:
