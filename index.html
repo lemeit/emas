@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>EMA Saladillo — Red Meteorológica</title>
+<title>EMAS — Red de estaciones meteorológicas automáticas</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
@@ -226,10 +226,10 @@ canvas{width:100% !important}
 
 <!-- HEADER -->
 <div class="header">
-  <div class="logo">EMA</div>
+  <div class="logo">EMAS</div>
   <div class="header-mid">
-    <h1 id="h-titulo">EMA Saladillo</h1>
-    <p id="h-sub">Red de estaciones meteorológicas automáticas de Saladillo</p>
+    <h1 id="h-titulo">EMAS</h1>
+    <p id="h-sub">Red de estaciones meteorológicas automáticas</p>
   </div>
   <div class="header-right">
     <div class="est-sel">
@@ -237,7 +237,8 @@ canvas{width:100% !important}
       <button class="est-btn" onclick="setEstacion('cfr',this)" title="EMA-CFR · Centro de Formación Rural">EMA-CFR</button>
       <button class="est-btn" onclick="setEstacion('dc',this)" title="EMA-DC · Defensa Civil Aeródromo">EMA-DC</button>
       <button class="est-btn" onclick="setEstacion('cs',this)" title="EMA-CS · Clima Saladillo B° Falucho">EMA-CS</button>
-      <button class="est-btn" onclick="setEstacion('comp',this)" title="Comparativa 4 estaciones">⇌</button>
+      <button class="est-btn" onclick="setEstacion('m25',this)" title="EMA-25C · 25Clima — 25 de Mayo">EMA-25C</button>
+      <button class="est-btn" onclick="setEstacion('comp',this)" title="Comparativa 5 estaciones">⇌</button>
     </div>
     <div class="status">
       <div class="dot" id="dot"></div>
@@ -534,7 +535,7 @@ canvas{width:100% !important}
     <div class="about-grid">
       <div class="about-card">
         <h3>📡 El proyecto</h3>
-        <p>Red EMA Saladillo integra datos meteorológicos de 4 estaciones automáticas distribuidas en el partido de Saladillo, Buenos Aires. Los datos se recopilan cada hora, se almacenan en la nube y se visualizan en este portal en tiempo real.</p>
+        <p>Red EMAS integra datos meteorológicos de estaciones automáticas distribuidas en los partidos de Saladillo y 25 de Mayo, Buenos Aires. Los datos se recopilan cada hora, se almacenan en la nube y se visualizan en este portal en tiempo real.</p>
         <p style="margin-top:8px">El proyecto surge en el marco del espacio curricular <strong style="color:var(--text)">Laboratorio de Industrias</strong> de 7° año del Técnico Químico, con el objetivo de establecer la infraestructura base para correlacionar variables meteorológicas con calidad del aire.</p>
       </div>
       <div class="about-card">
@@ -549,7 +550,7 @@ canvas{width:100% !important}
       </div>
       <div class="about-card">
         <h3>🌐 Red de monitoreo ambiental</h3>
-        <p>EMA Saladillo es uno de tres proyectos de monitoreo que comparten la misma infraestructura en Cloudflare, pensados para integrarse a futuro:</p>
+        <p>EMAS es uno de tres proyectos de monitoreo que comparten la misma infraestructura en Cloudflare, pensados para integrarse a futuro:</p>
         <ul>
           <li><strong style="color:var(--text)">Meteorología</strong> — este portal, <a href="https://emas.lemeit.ar" target="_blank">emas.lemeit.ar</a></li>
           <li><strong style="color:var(--text)">Calidad del aire</strong> — sensores PurpleAir en escuelas, <a href="https://aq.lemeit.ar" target="_blank">aq.lemeit.ar</a></li>
@@ -598,6 +599,13 @@ canvas{width:100% !important}
           <a href="https://climasaladillo.com/template/indexDesktop.php" target="_blank" class="about-est-logo" title="Clima Saladillo — B° Falucho">
             <img src="https://design.lemeit.ar/logos/climasaladillo.png" alt="Clima Saladillo">
           </a>
+        </div>
+        <div class="about-est-row">
+          <div class="about-dot" style="background:#5B8DD9"></div>
+          <div class="about-est-info">
+            <div class="about-est-name">EMA-25C — 25Clima (25 de Mayo)</div>
+            <div class="about-est-sub">Terceros · API Weather Underground · -35.435069, -60.170656</div>
+          </div>
         </div>
       </div>
       <div class="about-card">
@@ -743,6 +751,33 @@ const ESTACIONES = {
     paramHistorial: { "Temperatura":"Temperatura", "Humedad":"Humedad", "Lluvia diaria":"Lluvia Diaria", "Lluvia":"Lluvia Diaria", "Presión":"Presion", "Vel. viento":"Velocidad Viento" },
     paramDirViento: null,
     paramVelViento: "Velocidad Viento",
+  },
+  m25: {
+    tabla:  "mediciones_25c",
+    nombre: "EMA-25C — 25Clima",
+    sub:    "EMA-25C · 25Clima · 25 de Mayo",
+    logoSrc: null,
+    logoAlt: null,
+    logoHref: "https://25clima.ar/",
+    logoTitle: "25Clima (N-TecLab / SS Desarrollos) — estación de terceros vía Weather Underground",
+    campoParam: "parametro",
+    campofecha: "insertado_en",
+    lat: -35.435069, lon: -60.170656,
+    params: [
+      { id:"Temperatura",         nombre:"Temperatura",       unidad:"°C",   dec:1, ico:"🌡️" },
+      { id:"Sensacion Termica",   nombre:"Sensación térmica", unidad:"°C",   dec:1, ico:"🌡️" },
+      { id:"Punto de Rocio",      nombre:"Punto de rocío",    unidad:"°C",   dec:1, ico:"🌫️" },
+      { id:"Humedad",             nombre:"Humedad",           unidad:"%",    dec:0, ico:"💧" },
+      { id:"Presion",             nombre:"Presión",           unidad:"hPa",  dec:1, ico:"📊" },
+      { id:"Velocidad Viento",    nombre:"Vel. Viento",       unidad:"km/h", dec:1, ico:"💨" },
+      { id:"Rafaga",              nombre:"Ráfaga",            unidad:"km/h", dec:1, ico:"🌬️" },
+      { id:"Direccion del Viento",nombre:"Dir. Viento",       unidad:"°",    dec:0, ico:"🧭", rosa:true },
+      { id:"Lluvia Diaria",       nombre:"Lluvia diaria",     unidad:"mm",   dec:1, ico:"🌧️" },
+      { id:"Radiacion Solar",     nombre:"Radiación solar",   unidad:"W/m²", dec:0, ico:"☀️" },
+    ],
+    paramHistorial: { "Temperatura":"Temperatura", "Humedad":"Humedad", "Lluvia diaria":"Lluvia Diaria", "Lluvia":"Lluvia Diaria", "Presión":"Presion", "Vel. viento":"Velocidad Viento" },
+    paramDirViento: "Direccion del Viento",
+    paramVelViento: "Velocidad Viento",
   }
 };
 
@@ -810,8 +845,8 @@ function setEstacion(id, btn) {
       .map(k => `<option value="${k}">${k}</option>`).join("");
     selHist.value = "Temperatura";
 
-    document.getElementById("h-titulo").textContent = "Red EMA Saladillo — Comparativa";
-    document.getElementById("h-sub").textContent    = "EMA-EET · EMA-CFR · EMA-DC · EMA-CS · Saladillo, Bs. As.";
+    document.getElementById("h-titulo").textContent = "Red EMAS — Comparativa";
+    document.getElementById("h-sub").textContent    = "EMA-EET · EMA-CFR · EMA-DC · EMA-CS · EMA-25C · Saladillo y 25 de Mayo, Bs. As.";
     renderFooterEma();
     cargarComparativa();
     return;
@@ -903,22 +938,22 @@ async function cargarActuales() {
 
 // Mapa de parámetros normalizados → claves por tabla
 const COMP_MAP = {
-  "Temperatura":       { eet:14,  cfr:"Temperatura",          dc:"Temperatura",      cs:"Temperatura",      ico:"🌡️", uni:"°C",    dec:1 },
-  "Temp. máxima":      { eet:null,cfr:null,                   dc:"Temperatura Maxima",cs:"Temperatura Maxima",ico:"🔺", uni:"°C",   dec:1 },
-  "Temp. mínima":      { eet:null,cfr:null,                   dc:"Temperatura Minima",cs:"Temperatura Minima",ico:"🔻", uni:"°C",   dec:1 },
-  "Humedad":           { eet:18,  cfr:"Humedad",              dc:"Humedad",          cs:"Humedad",           ico:"💧", uni:"%",    dec:0 },
-  "Presión":          { eet:218, cfr:"Presion Barometrica",  dc:"Presion",          cs:"Presion",           ico:"📊", uni:"hPa",  dec:1 },
-  "Vel. viento":       { eet:4,   cfr:"Velocidad del Viento", dc:"Velocidad Viento", cs:"Velocidad Viento",  ico:"💨", uni:"km/h", dec:1 },
-  "Ráfaga":            { eet:null,cfr:null,                   dc:"Rafaga",           cs:"Rafaga",            ico:"🌬️", uni:"km/h", dec:1 },
-  "Dir. viento":       { eet:5,   cfr:"Direccion del Viento", dc:"Direccion Viento", cs:null,                ico:"🧭", uni:"°",    dec:0 },
-  "Lluvia":            { eet:20,  cfr:"Lluvia Diaria",        dc:"Lluvia Acumulada", cs:"Lluvia Diaria",     ico:"🌧️", uni:"mm",   dec:1 },
-  "Punto de rocío":    { eet:null,cfr:"Punto de Rocio",       dc:"Punto de Rocio",   cs:"Punto de Rocio",    ico:"🌫️", uni:"°C",   dec:1 },
-  "Radiación solar":   { eet:null,cfr:"Radiacion Solar",      dc:null,               cs:"Radiacion Solar",   ico:"☀️", uni:"W/m²", dec:0 },
-  "Sensación térmica": { eet:null,cfr:null,                   dc:null,               cs:"Sensacion Termica", ico:"🌡️", uni:"°C",   dec:1 },
+  "Temperatura":       { eet:14,  cfr:"Temperatura",          dc:"Temperatura",      cs:"Temperatura",      m25:"Temperatura",          ico:"🌡️", uni:"°C",    dec:1 },
+  "Temp. máxima":      { eet:null,cfr:null,                   dc:"Temperatura Maxima",cs:"Temperatura Maxima",m25:null,                  ico:"🔺", uni:"°C",   dec:1 },
+  "Temp. mínima":      { eet:null,cfr:null,                   dc:"Temperatura Minima",cs:"Temperatura Minima",m25:null,                  ico:"🔻", uni:"°C",   dec:1 },
+  "Humedad":           { eet:18,  cfr:"Humedad",              dc:"Humedad",          cs:"Humedad",           m25:"Humedad",              ico:"💧", uni:"%",    dec:0 },
+  "Presión":          { eet:218, cfr:"Presion Barometrica",  dc:"Presion",          cs:"Presion",           m25:"Presion",              ico:"📊", uni:"hPa",  dec:1 },
+  "Vel. viento":       { eet:4,   cfr:"Velocidad del Viento", dc:"Velocidad Viento", cs:"Velocidad Viento",  m25:"Velocidad Viento",     ico:"💨", uni:"km/h", dec:1 },
+  "Ráfaga":            { eet:null,cfr:null,                   dc:"Rafaga",           cs:"Rafaga",            m25:"Rafaga",               ico:"🌬️", uni:"km/h", dec:1 },
+  "Dir. viento":       { eet:5,   cfr:"Direccion del Viento", dc:"Direccion Viento", cs:null,                m25:"Direccion del Viento", ico:"🧭", uni:"°",    dec:0 },
+  "Lluvia":            { eet:20,  cfr:"Lluvia Diaria",        dc:"Lluvia Acumulada", cs:"Lluvia Diaria",     m25:"Lluvia Diaria",        ico:"🌧️", uni:"mm",   dec:1 },
+  "Punto de rocío":    { eet:null,cfr:"Punto de Rocio",       dc:"Punto de Rocio",   cs:"Punto de Rocio",    m25:"Punto de Rocio",       ico:"🌫️", uni:"°C",   dec:1 },
+  "Radiación solar":   { eet:null,cfr:"Radiacion Solar",      dc:null,               cs:"Radiacion Solar",   m25:"Radiacion Solar",      ico:"☀️", uni:"W/m²", dec:0 },
+  "Sensación térmica": { eet:null,cfr:null,                   dc:null,               cs:"Sensacion Termica", m25:"Sensacion Termica",    ico:"🌡️", uni:"°C",   dec:1 },
 };
 
-const EST_COLORES = { eet:"#D9691F", cfr:"#8FB56B", dc:"#D9736F", cs:"#D9A441" };
-const EST_NOMBRES = { eet:"EMA-EET", cfr:"EMA-CFR", dc:"EMA-DC", cs:"EMA-CS" };
+const EST_COLORES = { eet:"#D9691F", cfr:"#8FB56B", dc:"#D9736F", cs:"#D9A441", m25:"#5B8DD9" };
+const EST_NOMBRES = { eet:"EMA-EET", cfr:"EMA-CFR", dc:"EMA-DC", cs:"EMA-CS", m25:"EMA-25C" };
 
 async function cargarComparativa() {
   const wrap = document.getElementById("cards-wrap");
@@ -926,11 +961,12 @@ async function cargarComparativa() {
 
   try {
     // Obtener últimos datos de las 4 estaciones
-    const [rowsEet, rowsCfr, rowsDc, rowsCs] = await Promise.all([
+    const [rowsEet, rowsCfr, rowsDc, rowsCs, rowsM25] = await Promise.all([
       supaFetch("mediciones_ema", "select=codigo,valor,fecha_hora_ar&order=fecha_hora_utc.desc&limit=100"),
       supaFetch("mediciones_cfr", "select=parametro,valor,fecha_hora_ar&order=insertado_en.desc&limit=100"),
       supaFetch("mediciones_dc",  "select=parametro,valor,fecha_hora_ar&order=insertado_en.desc&limit=100"),
       supaFetch("mediciones_cs",  "select=parametro,valor,fecha_hora_ar&order=insertado_en.desc&limit=100"),
+      supaFetch("mediciones_25c", "select=parametro,valor,fecha_hora_ar&order=insertado_en.desc&limit=100"),
     ]);
 
     const ult = (rows, key) => {
@@ -940,6 +976,7 @@ async function cargarComparativa() {
     const uCfr = ult(rowsCfr, "parametro");
     const uDc  = ult(rowsDc,  "parametro");
     const uCs  = ult(rowsCs,  "parametro");
+    const uM25 = ult(rowsM25, "parametro");
 
     const getVal = (u, key) => {
       if (key === null) return null;
@@ -969,7 +1006,7 @@ async function cargarComparativa() {
         }).join("");
 
       // Timestamp del último registro
-      const allRows = id==="eet"?rowsEet:id==="cfr"?rowsCfr:id==="dc"?rowsDc:rowsCs;
+      const allRows = id==="eet"?rowsEet:id==="cfr"?rowsCfr:id==="dc"?rowsDc:id==="cs"?rowsCs:rowsM25;
       const ts = timestamp(allRows);
 
       return `<div class="comp-card" style="border-top:3px solid ${color}">
@@ -987,13 +1024,14 @@ async function cargarComparativa() {
         cfr: getVal(uCfr, m.cfr),
         dc:  getVal(uDc,  m.dc),
         cs:  getVal(uCs,  m.cs),
+        m25: getVal(uM25, m.m25),
       };
       const disponibles = Object.values(vals).filter(v => v !== null);
       if (disponibles.length < 2) return "";
 
       const promedio = disponibles.reduce((a,b)=>a+b,0) / disponibles.length;
 
-      const celdas = ["eet","cfr","dc","cs"].map(id => {
+      const celdas = ["eet","cfr","dc","cs","m25"].map(id => {
         const v = vals[id];
         if (v === null) return `<td style="color:var(--muted);text-align:center">—</td>`;
         const dif = v - promedio;
@@ -1014,11 +1052,12 @@ async function cargarComparativa() {
     }).filter(Boolean).join("");
 
     wrap.innerHTML = `
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px">
         ${cardHtml("eet",uEet)}
         ${cardHtml("cfr",uCfr)}
         ${cardHtml("dc",uDc)}
         ${cardHtml("cs",uCs)}
+        ${cardHtml("m25",uM25)}
       </div>
 
       <div class="chart-wrap" style="overflow:auto">
@@ -1036,6 +1075,7 @@ async function cargarComparativa() {
               <th style="text-align:center;color:${EST_COLORES.cfr}">EMA-CFR</th>
               <th style="text-align:center;color:${EST_COLORES.dc}">EMA-DC</th>
               <th style="text-align:center;color:${EST_COLORES.cs}">EMA-CS</th>
+              <th style="text-align:center;color:${EST_COLORES.m25}">EMA-25C</th>
             </tr>
           </thead>
           <tbody style="border-top:1px solid var(--border)">${filasDif}</tbody>
@@ -1462,6 +1502,8 @@ async function cargarMapa() {
       tabla:"mediciones_dc",  campo:"parametro", pid:"Temperatura", color:"#D9736F" },
     { id:"cs",  nombre:"EMA-CS", lat:-35.64500, lon:-59.77580,
       tabla:"mediciones_cs",  campo:"parametro", pid:"Temperatura", color:"#D9A441" },
+    { id:"m25", nombre:"EMA-25C", lat:-35.435069, lon:-60.170656,
+      tabla:"mediciones_25c", campo:"parametro", pid:"Temperatura", color:"#5B8DD9" },
   ];
 
   const mapaCards = document.getElementById("mapa-cards");

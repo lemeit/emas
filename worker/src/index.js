@@ -9,12 +9,12 @@
  * `mediciones` con columna `estacion`.
  *
  * Rutas (API pública, de solo lectura — sin autenticación, CORS abierto):
- *   GET /rest/v1/mediciones_ema | mediciones_cfr | mediciones_dc | mediciones_cs
+ *   GET /rest/v1/mediciones_ema | mediciones_cfr | mediciones_dc | mediciones_cs | mediciones_25c
  *       ?select=...&order=campo.asc|desc&limit=N&codigo=eq.X&parametro=eq.X&horas=N
  *       ?desde=YYYY-MM-DD[ HH:MM:SS]&hasta=...  (rango de fechas absoluto en UTC,
  *        pisa a "horas" si viene alguno de los dos)
  *       &formato=csv  (devuelve CSV en vez de JSON)
- *   GET /rest/v1/v_temperatura_comparativa?select=hora,eet,cfr,dc,cs&order=hora.asc&limit=N&horas=N&formato=csv
+ *   GET /rest/v1/v_temperatura_comparativa?select=hora,eet,cfr,dc,cs,m25&order=hora.asc&limit=N&horas=N&formato=csv
  *   GET /rest/v1/v_ema_armonizada?select=hora,estacion,valor&parametro=eq.CANON&order=hora.asc&limit=N&horas=N&formato=csv
  * Documentación con ejemplos: /api.html en emas.lemeit.ar
  *
@@ -103,6 +103,7 @@ const TABLE_MAP = {
   mediciones_cfr: "EMA-CFR",
   mediciones_dc: "EMA-DC",
   mediciones_cs: "EMA-CS",
+  mediciones_25c: "EMA-25C",
 };
 
 // nombre de estación que usaba la vista v_ema_armonizada (distinto del código interno)
@@ -111,20 +112,21 @@ const ARMONIZADA_NOMBRE = {
   "EMA-CFR": "CFR",
   "EMA-DC": "DC",
   "EMA-CS": "CS",
+  "EMA-25C": "25 de Mayo",
 };
 
 // parámetro canónico (el que usaba v_ema_armonizada/v_temperatura_comparativa)
 // -> identificador propio de cada estación (codigo numérico para EET, texto para el resto)
 const CANON_MAP = {
-  Temperatura: { eet: 14, cfr: "Temperatura", dc: "Temperatura", cs: "Temperatura" },
-  Humedad: { eet: 18, cfr: "Humedad", dc: "Humedad", cs: "Humedad" },
-  Presion: { eet: 218, cfr: "Presion Barometrica", dc: "Presion", cs: "Presion" },
-  "Velocidad Viento": { eet: 4, cfr: "Velocidad del Viento", dc: "Velocidad Viento", cs: "Velocidad Viento" },
-  Rafaga: { eet: null, cfr: null, dc: "Rafaga", cs: "Rafaga" },
-  "Direccion Viento": { eet: 5, cfr: "Direccion del Viento", dc: "Direccion Viento", cs: null },
-  Lluvia: { eet: 20, cfr: "Lluvia Diaria", dc: "Lluvia Acumulada", cs: "Lluvia Diaria" },
-  "Punto de Rocio": { eet: null, cfr: "Punto de Rocio", dc: "Punto de Rocio", cs: "Punto de Rocio" },
-  "Radiacion Solar": { eet: null, cfr: "Radiacion Solar", dc: null, cs: "Radiacion Solar" },
+  Temperatura: { eet: 14, cfr: "Temperatura", dc: "Temperatura", cs: "Temperatura", m25: "Temperatura" },
+  Humedad: { eet: 18, cfr: "Humedad", dc: "Humedad", cs: "Humedad", m25: "Humedad" },
+  Presion: { eet: 218, cfr: "Presion Barometrica", dc: "Presion", cs: "Presion", m25: "Presion" },
+  "Velocidad Viento": { eet: 4, cfr: "Velocidad del Viento", dc: "Velocidad Viento", cs: "Velocidad Viento", m25: "Velocidad Viento" },
+  Rafaga: { eet: null, cfr: null, dc: "Rafaga", cs: "Rafaga", m25: "Rafaga" },
+  "Direccion Viento": { eet: 5, cfr: "Direccion del Viento", dc: "Direccion Viento", cs: null, m25: "Direccion del Viento" },
+  Lluvia: { eet: 20, cfr: "Lluvia Diaria", dc: "Lluvia Acumulada", cs: "Lluvia Diaria", m25: "Lluvia Diaria" },
+  "Punto de Rocio": { eet: null, cfr: "Punto de Rocio", dc: "Punto de Rocio", cs: "Punto de Rocio", m25: "Punto de Rocio" },
+  "Radiacion Solar": { eet: null, cfr: "Radiacion Solar", dc: null, cs: "Radiacion Solar", m25: "Radiacion Solar" },
 };
 
 function pad(n) {
@@ -227,6 +229,7 @@ async function handleTemperaturaComparativa(env, params) {
     ["EMA-CFR", "cfr", "parametro", "Temperatura"],
     ["EMA-DC", "dc", "parametro", "Temperatura"],
     ["EMA-CS", "cs", "parametro", "Temperatura"],
+    ["EMA-25C", "m25", "parametro", "Temperatura"],
   ];
 
   const porEstacion = {};
@@ -262,6 +265,7 @@ async function handleTemperaturaComparativa(env, params) {
       ...Object.keys(porEstacion.cfr),
       ...Object.keys(porEstacion.dc),
       ...Object.keys(porEstacion.cs),
+      ...Object.keys(porEstacion.m25),
     ]),
   ].sort();
 
@@ -274,6 +278,7 @@ async function handleTemperaturaComparativa(env, params) {
     cfr: porEstacion.cfr[h] ?? null,
     dc: porEstacion.dc[h] ?? null,
     cs: porEstacion.cs[h] ?? null,
+    m25: porEstacion.m25[h] ?? null,
   }));
   if (wantsCsv(params)) return csvResponse(filas, "temperatura_comparativa.csv");
   return json(filas);
@@ -293,6 +298,7 @@ async function handleArmonizada(env, params) {
     ["EMA-CFR", "parametro", mapa.cfr],
     ["EMA-DC", "parametro", mapa.dc],
     ["EMA-CS", "parametro", mapa.cs],
+    ["EMA-25C", "parametro", mapa.m25],
   ];
 
   let filas = [];
@@ -342,7 +348,7 @@ export default {
       return proxyCartoTile(env, style, z, x, y, retina || "");
     }
 
-    const match = url.pathname.match(/^\/rest\/v1\/([a-z_]+)$/);
+    const match = url.pathname.match(/^\/rest\/v1\/([a-z0-9_]+)$/);
     if (!match) return json({ error: "Not found" }, 404);
 
     const tabla = match[1];
