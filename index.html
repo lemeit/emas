@@ -367,7 +367,7 @@ canvas{width:100% !important}
   <!-- MAPA -->
   <div class="section" id="tab-mapa">
     <div class="chart-wrap" style="padding:0;overflow:hidden">
-      <div id="mapa-container" style="height:400px;width:100%"></div>
+      <div id="mapa-container" style="height:400px;width:100%;position:relative;z-index:1"></div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:12px" id="mapa-cards"></div>
   </div>
@@ -1514,7 +1514,14 @@ async function cargarMapa() {
     : `${SUPA_URL}/tiles/light_all/{z}/{x}/{y}{r}.png`;
 
   if (!mapaInst) {
-    mapaInst = L.map("mapa-container").setView([-35.628, -59.797], 13);
+    // Encuadre inicial que cubra las 5 estaciones (Saladillo + 25 de Mayo),
+    // no solo el cluster de Saladillo — antes quedaba centrado en Saladillo
+    // con zoom fijo y la estación de 25 de Mayo directamente fuera de vista.
+    const boundsInicial = L.latLngBounds([
+      [-35.64533, -59.78482], [-35.62236, -59.78359], [-35.60063, -59.81350],
+      [-35.64500, -59.77580], [-35.435069, -60.170656],
+    ]);
+    mapaInst = L.map("mapa-container").fitBounds(boundsInicial, { padding: [30, 30] });
     mapaTileLayer = L.tileLayer(tileUrl, { attribution:"© OpenStreetMap contributors © CARTO" }).addTo(mapaInst);
   } else {
     // Actualizar tile según tema actual
