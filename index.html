@@ -627,8 +627,6 @@ canvas{width:100% !important}
       <p style="margin-top:6px">Proyecto educativo — más materiales y proyectos del autor en <a href="https://profe.lemeit.ar" target="_blank">profe.lemeit.ar</a>.</p>
       <p style="margin-top:6px;color:var(--muted);font-size:11px">Los datos son operativos en tiempo útil y no han sido validados formalmente por los organismos responsables. Las diferencias entre estaciones pueden reflejar tanto variabilidad microclimática real como offsets de calibración de los sensores.</p>
     </div>
-    <div style="text-align:center;font-family:var(--mono);font-size:10px;color:var(--muted);padding:10px 0;border-top:1px solid var(--border)" id="version-footer-acerca">
-    </div>
   </div>
 
 </div><!-- /main -->
@@ -1855,12 +1853,12 @@ function showTab(id, btn) {
   if(id==="rosa")       { cargarRosa(); cargarVientoTemporal(); }
   if(id==="mapa")       cargarMapa();
   if(id==="espacial")   renderEspacial();
-  if(id==="estaciones" || id==="acerca") {}
+  if(id==="estaciones" || id==="acerca") { renderFooterEma("comp"); }
+  else                   { renderFooterEma(); }
 }
 
 /* ── VERSIÓN — fuente única, se refleja en todos los pies de página ── */
 const APP_VERSION = "v6.0.7 — 2026-08-31";
-const APP_VERSION_DETALLE = `${APP_VERSION} · migración de Supabase a Cloudflare D1 · Desarrollado con Claude (Anthropic) · Saladillo, Buenos Aires`;
 
 // Logo(s) en el footer: el de la estación seleccionada (proveedor del
 // hardware/red, no necesariamente la institución que la aloja — ver notas
@@ -1874,18 +1872,17 @@ function footerLogosEma(id) {
   const est = ESTACIONES[id];
   return est.logoSrc ? [entry(est)] : [];
 }
-function renderFooterEma() {
+function renderFooterEma(overrideId) {
   if (!window.LemeitCommon) return;
   LemeitCommon.renderFooter(document.getElementById("lm-footer"), {
     version: APP_VERSION,
-    logos: footerLogosEma(estActual),
+    logos: footerLogosEma(overrideId || estActual),
     // "md" (20px) en vez del "sm" (15px) por defecto del footer compartido:
     // los logos de proveedor de estación se veían muy chicos.
     logoSize: "md",
   });
 }
 renderFooterEma();
-document.getElementById("version-footer-acerca").textContent = APP_VERSION_DETALLE;
 
 /* ── INIT ── */
 if (window.LemeitCommon) LemeitCommon.initSwitcher("emas");
