@@ -87,9 +87,8 @@ El Worker `worker/src/index.js` expone rutas compatibles con el formato PostgRES
 
 ## Proyecto educativo
 
-Laboratorio de Industrias · 7° Año Técnico Químico  
-EEST N°1 "Gral. Savio" · Saladillo · Buenos Aires · 2026  
-Ing. Luciano Lamaita — más proyectos y materiales en [profe.lemeit.ar](https://profe.lemeit.ar)
+Red de estaciones meteorológicas automáticas de Saladillo y 25 de Mayo, con fines de monitoreo ambiental y educación ambiental ciudadana.
+Ing. Luciano Lamaita — docente de Física y Química en Saladillo, Buenos Aires — más proyectos y materiales en [profe.lemeit.ar](https://profe.lemeit.ar)
 
 ## Licencia
 
