@@ -4,7 +4,7 @@
 
 Sistema de adquisición y visualización de datos meteorológicos de estaciones automáticas en Saladillo y 25 de Mayo, Buenos Aires, Argentina. Publicado en [emas.lemeit.ar](https://emas.lemeit.ar).
 
-Es uno de tres proyectos de monitoreo ambiental que comparten la misma infraestructura de Cloudflare (Pages + Workers + D1), pensados para integrarse a futuro: este (meteorología), [aq.lemeit.ar](https://aq.lemeit.ar) (calidad del aire, sensores PurpleAir) y [agua-saladillo](https://github.com/lemeit/agua-saladillo) (calidad del agua, en desarrollo, pensado para wq.lemeit.ar).
+Es uno de tres proyectos de monitoreo ambiental que comparten la misma infraestructura de Cloudflare (Pages + Workers + D1), pensados para integrarse a futuro: este (meteorología), [aq.lemeit.ar](https://aq.lemeit.ar) (calidad del aire, sensores PurpleAir) y [lemeit-wq](https://github.com/lemeit/lemeit-wq) (calidad del agua, en desarrollo, pensado para wq.lemeit.ar).
 
 📚 Documentación técnica completa, guías de uso de la API y bitácora de los tres portales: [wiki.lemeit.ar](https://wiki.lemeit.ar).
 
