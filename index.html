@@ -43,7 +43,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);
   height:var(--header-h);
 }
 .logo{font-family:var(--mono);font-size:10px;font-weight:700;color:#fff;
-  background:var(--accent);padding:4px 7px;border-radius:5px;flex-shrink:0}
+  /* Celeste de la paleta compartida (--lm-site-emas en design.lemeit.ar),
+     no --accent (naranja), que sigue siendo el color del resto de la UI. */
+  background:var(--lm-site-emas, #0097A7);padding:4px 7px;border-radius:5px;flex-shrink:0}
 .header-mid{flex:1;min-width:0}
 .header-mid h1{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .header-mid p{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:1px}
