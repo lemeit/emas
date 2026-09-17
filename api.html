@@ -61,7 +61,7 @@ footer{max-width:840px;margin:0 auto;padding:0 18px 40px;color:var(--muted);font
 </div>
 
 <main>
-  <p>Esta es la API pública de solo lectura que ya usa <code>emas.lemeit.ar</code> para mostrar los datos de las 4 estaciones meteorológicas de Saladillo (EET N°1, CFR, DC y CS). Cualquiera puede consumirla directamente, sin registro ni token: es de lectura, CORS abierto, y devuelve los mismos datos que ya son públicos en el portal.</p>
+  <p>Esta es la API pública de solo lectura que ya usa <code>app.lemeit.ar/emas</code> para mostrar los datos de las 4 estaciones meteorológicas de Saladillo (EET N°1, CFR, DC y CS). Cualquiera puede consumirla directamente, sin registro ni token: es de lectura, CORS abierto, y devuelve los mismos datos que ya son públicos en el portal.</p>
 
   <p class="dim">Base URL: <code>https://api.lemeit.ar/emas</code> (el <code>https://ema-saladillo-api.fisicai-eureka-01.workers.dev</code> original sigue andando igual como respaldo directo, sin el prefijo <code>/emas</code>)</p>
 
@@ -115,10 +115,10 @@ curl "https://api.lemeit.ar/emas/rest/v1/mediciones_dc?desde=2026-08-01&hasta=20
   </div>
 
   <h2>Notas</h2>
-  <p class="dim">No hace falta API key ni registro: los datos meteorológicos son públicos. Usá <code>&formato=csv</code> en cualquiera de las rutas de arriba para bajar directo un CSV en vez de parsear JSON. Los timestamps se guardan y devuelven en UTC (cada fila también trae <code>fecha_hora_ar</code> ya convertida a hora Argentina, cuando el <code>select</code> la incluye). Si vas a reutilizar estos datos públicamente, agradecemos que menciones como fuente a <a href="https://emas.lemeit.ar" style="color:var(--accent)">emas.lemeit.ar</a> — Red Meteorológica de Saladillo.</p>
+  <p class="dim">No hace falta API key ni registro: los datos meteorológicos son públicos. Usá <code>&formato=csv</code> en cualquiera de las rutas de arriba para bajar directo un CSV en vez de parsear JSON. Los timestamps se guardan y devuelven en UTC (cada fila también trae <code>fecha_hora_ar</code> ya convertida a hora Argentina, cuando el <code>select</code> la incluye). Si vas a reutilizar estos datos públicamente, agradecemos que menciones como fuente a <a href="https://app.lemeit.ar/emas" style="color:var(--accent)">app.lemeit.ar/emas</a> — Red Meteorológica de Saladillo.</p>
 </main>
 
-<footer>emas.lemeit.ar · Red Meteorológica de Saladillo</footer>
+<footer>app.lemeit.ar/emas · Red Meteorológica de Saladillo</footer>
 
 </body>
 </html>

@@ -1,10 +1,10 @@
 # Red EMAS
 
-[![sitio](https://img.shields.io/badge/sitio-emas.lemeit.ar-009688?style=flat-square)](https://emas.lemeit.ar) [![docs](https://img.shields.io/badge/docs-wiki.lemeit.ar-009688?style=flat-square)](https://wiki.lemeit.ar/red-ambiental/02-ema-saladillo/) [![API](https://img.shields.io/badge/API-pública-FF5722?style=flat-square)](https://emas.lemeit.ar/api.html) [![licencia](https://img.shields.io/badge/licencia-MIT-009688?style=flat-square)](#licencia)
+[![sitio](https://img.shields.io/badge/sitio-app.lemeit.ar/emas-009688?style=flat-square)](https://app.lemeit.ar/emas) [![docs](https://img.shields.io/badge/docs-wiki.lemeit.ar-009688?style=flat-square)](https://wiki.lemeit.ar/red-ambiental/02-ema-saladillo/) [![API](https://img.shields.io/badge/API-pública-FF5722?style=flat-square)](https://app.lemeit.ar/emas/api.html) [![licencia](https://img.shields.io/badge/licencia-MIT-009688?style=flat-square)](#licencia)
 
-Sistema de adquisición y visualización de datos meteorológicos de estaciones automáticas en Saladillo y 25 de Mayo, Buenos Aires, Argentina. Publicado en [emas.lemeit.ar](https://emas.lemeit.ar).
+Sistema de adquisición y visualización de datos meteorológicos de estaciones automáticas en Saladillo y 25 de Mayo, Buenos Aires, Argentina. Publicado en [app.lemeit.ar/emas](https://app.lemeit.ar/emas).
 
-Es uno de tres proyectos de monitoreo ambiental que comparten la misma infraestructura de Cloudflare (Pages + Workers + D1), pensados para integrarse a futuro: este (meteorología), [aq.lemeit.ar](https://aq.lemeit.ar) (calidad del aire, sensores PurpleAir) y [lemeit-wq](https://github.com/lemeit/lemeit-wq) (calidad del agua, en desarrollo, pensado para wq.lemeit.ar).
+Es uno de tres proyectos de monitoreo ambiental que comparten la misma infraestructura de Cloudflare (Pages + Workers + D1), pensados para integrarse a futuro: este (meteorología), [app.lemeit.ar/aq](https://app.lemeit.ar/aq) (calidad del aire, sensores PurpleAir) y [lemeit-wq](https://github.com/lemeit/lemeit-wq) (calidad del agua, en desarrollo, pensado para app.lemeit.ar/wq).
 
 📚 Documentación técnica completa, guías de uso de la API y bitácora de los tres portales: [wiki.lemeit.ar](https://wiki.lemeit.ar).
 
@@ -18,7 +18,7 @@ Es uno de tres proyectos de monitoreo ambiental que comparten la misma infraestr
 | **EMA-CS** | Clima Saladillo — B° Falucho | JSON Meteotemplate | -35.64500, -59.77580 |
 | **EMA-25C** | 25Clima — 25 de Mayo (`IDEMAY14`) | API Weather Underground (PWS) | -35.435069, -60.170656 |
 
-**EMA-25C (septiembre 2026, en incorporación)**: primera estación fuera del partido de Saladillo — 25 de Mayo, muy cerca de la Esc. Ed. Artística N°1 "Lola Mora" (ya parte de la red de aq.lemeit.ar). No es una estación propia del proyecto: es la estación pública "25Clima" (25clima.ar), operada por N-TecLab/SS Desarrollos y registrada en Weather Underground con station ID `IDEMAY14`. Se consulta vía la API pública de PWS de Weather Underground (`scrapers/wu_25demayo.py`), con una API key propia (no la del sitio) — ver "Variables de entorno" abajo. Pendiente: confirmar con el operador antes de darle carácter permanente/oficial en el dashboard, ya que la estación no es del proyecto.
+**EMA-25C (septiembre 2026, en incorporación)**: primera estación fuera del partido de Saladillo — 25 de Mayo, muy cerca de la Esc. Ed. Artística N°1 "Lola Mora" (ya parte de la red de app.lemeit.ar/aq). No es una estación propia del proyecto: es la estación pública "25Clima" (25clima.ar), operada por N-TecLab/SS Desarrollos y registrada en Weather Underground con station ID `IDEMAY14`. Se consulta vía la API pública de PWS de Weather Underground (`scrapers/wu_25demayo.py`), con una API key propia (no la del sitio) — ver "Variables de entorno" abajo. Pendiente: confirmar con el operador antes de darle carácter permanente/oficial en el dashboard, ya que la estación no es del proyecto.
 
 ## Arquitectura
 
@@ -29,7 +29,7 @@ Cloudflare D1 — tabla unificada "mediciones"
     ↓ (consultada por)
 Worker "ema-saladillo-api" (Cloudflare Workers)
     ↓ (mismo formato de consulta que antes usaba PostgREST/Supabase)
-Dashboard HTML estático (Cloudflare Pages) — emas.lemeit.ar
+Dashboard HTML estático (Cloudflare Pages) — app.lemeit.ar/emas
 ```
 
 Hasta agosto de 2026 la base de datos era Supabase (PostgreSQL), con 4 tablas separadas (una por estación). Se migró todo el historial (~30.200 filas) a una tabla D1 unificada, y se agregó el Worker como capa de compatibilidad para no tener que reescribir el dashboard. Ver `worker/` y `d1/schema.sql`.
@@ -83,7 +83,7 @@ Base: `ema-saladillo-db` — tabla unificada `mediciones` (columna `estacion` di
 
 El Worker `worker/src/index.js` expone rutas compatibles con el formato PostgREST que usaba el dashboard (`mediciones_ema`, `mediciones_cfr`, `mediciones_dc`, `mediciones_cs`, `v_ema_armonizada`, `v_temperatura_comparativa`), calculadas sobre la tabla unificada.
 
-**API pública (agosto 2026)**: las mismas rutas de arriba están pensadas para que cualquiera las consuma directo — CORS abierto, sin autenticación ni token, son de solo lectura. Todas aceptan `desde`/`hasta` (`YYYY-MM-DD[ HH:MM:SS]`, UTC) como rango de fechas absoluto (pisa a `horas` si viene alguno de los dos) y `&formato=csv` para bajar CSV en vez de JSON. Documentación con ejemplos: [`emas.lemeit.ar/api.html`](https://emas.lemeit.ar/api.html) (fuente: `api.html` en la raíz de este repo).
+**API pública (agosto 2026)**: las mismas rutas de arriba están pensadas para que cualquiera las consuma directo — CORS abierto, sin autenticación ni token, son de solo lectura. Todas aceptan `desde`/`hasta` (`YYYY-MM-DD[ HH:MM:SS]`, UTC) como rango de fechas absoluto (pisa a `horas` si viene alguno de los dos) y `&formato=csv` para bajar CSV en vez de JSON. Documentación con ejemplos: [`app.lemeit.ar/emas/api.html`](https://app.lemeit.ar/emas/api.html) (fuente: `api.html` en la raíz de este repo).
 
 ## Proyecto educativo
 
