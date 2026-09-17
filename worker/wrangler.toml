@@ -2,6 +2,18 @@ name = "ema-saladillo-api"
 main = "src/index.js"
 compatibility_date = "2026-08-21"
 
+# Dominio público limpio, sumado como Route (no Custom Domain) para que
+# conviva en la misma zona lemeit.ar junto con api.lemeit.ar/aq. El
+# *.workers.dev de arriba sigue funcionando igual, sin el prefijo /emas.
+routes = [
+  { pattern = "api.lemeit.ar/emas/*", zone_name = "lemeit.ar" }
+]
+# Wrangler apaga el *.workers.dev por defecto en cuanto hay "routes" en el
+# archivo, a menos que se lo pida explícito acá -- sin esta línea el deploy
+# de arriba corta el *.workers.dev existente pese al comentario de que no
+# lo hace.
+workers_dev = true
+
 [[d1_databases]]
 binding = "DB"
 database_name = "ema-saladillo-db"

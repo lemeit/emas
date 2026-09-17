@@ -688,7 +688,11 @@ canvas{width:100% !important}
 ═══════════════════════════════════════════ */
 // Antes leía directo de Supabase; ahora pega al Worker de Cloudflare (D1),
 // que expone las mismas rutas/consultas para no tener que tocar el resto de este archivo.
-const SUPA_URL = "https://ema-saladillo-api.fisicai-eureka-01.workers.dev";
+// Dominio público compartido (Cloudflare Route api.lemeit.ar/emas/* → este
+// Worker, ver worker/wrangler.toml). El *.workers.dev de abajo comentado
+// sigue funcionando igual como respaldo directo, sin el prefijo /emas
+// (ej: https://ema-saladillo-api.fisicai-eureka-01.workers.dev)
+const SUPA_URL = "https://api.lemeit.ar/emas";
 const SUPA_KEY = ""; // ya no hace falta: el Worker no requiere API key
 
 const ESTACIONES = {

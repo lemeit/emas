@@ -342,13 +342,21 @@ export default {
 
     const url = new URL(request.url);
 
-    const tileMatch = url.pathname.match(/^\/tiles\/(light_all|dark_all)\/(\d+)\/(-?\d+)\/(-?\d+)(@2x)?\.png$/);
+    // api.lemeit.ar/emas/* (Route de Cloudflare, ver worker/wrangler.toml)
+    // llega con el prefijo /emas incluido — se lo sacamos acá, una sola
+    // vez, para que el resto del código no sepa ni le importe si vino por
+    // ahí o por el *.workers.dev directo (sin /emas), que sigue andando
+    // igual sin tocar nada.
+    let path = url.pathname;
+    if (path.startsWith("/emas/")) path = path.slice(5);
+
+    const tileMatch = path.match(/^\/tiles\/(light_all|dark_all)\/(\d+)\/(-?\d+)\/(-?\d+)(@2x)?\.png$/);
     if (tileMatch) {
       const [, style, z, x, y, retina] = tileMatch;
       return proxyCartoTile(env, style, z, x, y, retina || "");
     }
 
-    const match = url.pathname.match(/^\/rest\/v1\/([a-z0-9_]+)$/);
+    const match = path.match(/^\/rest\/v1\/([a-z0-9_]+)$/);
     if (!match) return json({ error: "Not found" }, 404);
 
     const tabla = match[1];

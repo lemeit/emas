@@ -63,7 +63,7 @@ footer{max-width:840px;margin:0 auto;padding:0 18px 40px;color:var(--muted);font
 <main>
   <p>Esta es la API pública de solo lectura que ya usa <code>emas.lemeit.ar</code> para mostrar los datos de las 4 estaciones meteorológicas de Saladillo (EET N°1, CFR, DC y CS). Cualquiera puede consumirla directamente, sin registro ni token: es de lectura, CORS abierto, y devuelve los mismos datos que ya son públicos en el portal.</p>
 
-  <p class="dim">Base URL: <code>https://ema-saladillo-api.fisicai-eureka-01.workers.dev</code></p>
+  <p class="dim">Base URL: <code>https://api.lemeit.ar/emas</code> (el <code>https://ema-saladillo-api.fisicai-eureka-01.workers.dev</code> original sigue andando igual como respaldo directo, sin el prefijo <code>/emas</code>)</p>
 
   <h2>Las 4 estaciones</h2>
   <table>
@@ -90,16 +90,16 @@ footer{max-width:840px;margin:0 auto;padding:0 18px 40px;color:var(--muted);font
       <tr><td><code>hasta</code></td><td>Fecha/hora UTC de fin, mismo formato que <code>desde</code>.</td></tr>
       <tr><td><code>formato</code></td><td><code>csv</code> para descargar CSV en vez de JSON.</td></tr>
     </table>
-    <pre>curl "https://ema-saladillo-api.fisicai-eureka-01.workers.dev/rest/v1/mediciones_cfr?parametro=eq.Temperatura&horas=168"
+    <pre>curl "https://api.lemeit.ar/emas/rest/v1/mediciones_cfr?parametro=eq.Temperatura&horas=168"
 
-curl "https://ema-saladillo-api.fisicai-eureka-01.workers.dev/rest/v1/mediciones_dc?desde=2026-08-01&hasta=2026-08-15&formato=csv" -O -J</pre>
+curl "https://api.lemeit.ar/emas/rest/v1/mediciones_dc?desde=2026-08-01&hasta=2026-08-15&formato=csv" -O -J</pre>
   </div>
 
   <h2>GET /rest/v1/v_temperatura_comparativa</h2>
   <div class="endpoint">
     <span class="path"><span class="method">GET</span>/rest/v1/v_temperatura_comparativa</span>
     <p class="dim">Temperatura promedio por hora de las 4 estaciones en columnas paralelas (<code>eet</code>, <code>cfr</code>, <code>dc</code>, <code>cs</code>), para comparar entre sí.</p>
-    <pre>curl "https://ema-saladillo-api.fisicai-eureka-01.workers.dev/rest/v1/v_temperatura_comparativa?horas=48"</pre>
+    <pre>curl "https://api.lemeit.ar/emas/rest/v1/v_temperatura_comparativa?horas=48"</pre>
   </div>
 
   <h2>GET /rest/v1/v_ema_armonizada</h2>
@@ -111,7 +111,7 @@ curl "https://ema-saladillo-api.fisicai-eureka-01.workers.dev/rest/v1/mediciones
       <tr><td><code>parametro</code></td><td><code>eq.Nombre</code> — uno de: Temperatura, Humedad, Presion, Velocidad Viento, Rafaga, Direccion Viento, Lluvia, Punto de Rocio, Radiacion Solar.</td></tr>
       <tr><td><code>horas</code> / <code>limit</code> / <code>formato</code></td><td>Igual que en <code>/rest/v1/:tabla</code>.</td></tr>
     </table>
-    <pre>curl "https://ema-saladillo-api.fisicai-eureka-01.workers.dev/rest/v1/v_ema_armonizada?parametro=eq.Lluvia&horas=720"</pre>
+    <pre>curl "https://api.lemeit.ar/emas/rest/v1/v_ema_armonizada?parametro=eq.Lluvia&horas=720"</pre>
   </div>
 
   <h2>Notas</h2>
