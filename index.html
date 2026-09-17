@@ -158,13 +158,24 @@ canvas{width:100% !important}
 /* ── Mobile: mismo patrón que aq/wq — el nav de tabs sigue visible,
    con scroll horizontal (ver .nav más arriba), sin barra inferior aparte ── */
 @media (max-width:640px){
-  :root{--header-h:52px}
+  /* Dos líneas: logo+título+status+switcher+theme arriba, selector de
+     estación abajo en su propia fila con scroll horizontal — así ningún
+     elemento le "tapa" espacio a otro, que era el problema (el selector de
+     estación, con 6 botones, no entraba en la misma fila que status/
+     switcher/theme y los empujaba fuera de la pantalla). */
+  :root{--header-h:90px}
 
-  /* Header compacto */
-  .header{padding:8px 12px;gap:8px}
+  /* Header compacto, en dos líneas */
+  .header{padding:8px 12px 6px;gap:8px;height:auto;flex-wrap:wrap}
   .header-mid h1{font-size:13px}
   .header-mid p{display:none}
-  .est-btn{font-size:9px;padding:4px 7px}
+
+  .est-sel{
+    order:3;flex-basis:100%;margin-top:6px;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+  }
+  .est-sel::-webkit-scrollbar{display:none}
+  .est-btn{font-size:10px;padding:5px 8px;flex-shrink:0}
 
   /* Contenido */
   .main{padding:10px}
@@ -192,9 +203,6 @@ canvas{width:100% !important}
 
   /* Análisis espacial */
   #esp-cards{grid-template-columns:repeat(2,1fr) !important}
-
-  /* Selector de estación — ocultar labels largos */
-  .est-btn[title*="EEST"]::after{content:"EET"}
 }
 
 /* ── Tablet ── */
@@ -233,15 +241,20 @@ canvas{width:100% !important}
     <h1 id="h-titulo">EMAS</h1>
     <p id="h-sub">Red de estaciones meteorológicas automáticas</p>
   </div>
+  <!-- En mobile pasa a su propia fila completa (ver @media más abajo) para
+       no competir por espacio con el status/switcher/theme de la derecha —
+       mismo criterio que el resto de la Red Ambiental: nada compite con el
+       status/switcher/theme, que siempre quedan visibles en la fila de
+       arriba. -->
+  <div class="est-sel">
+    <button class="est-btn active" onclick="setEstacion('eet',this)" title="EMA-EET · EEST N°1 Gral. Savio">EMA-EET</button>
+    <button class="est-btn" onclick="setEstacion('cfr',this)" title="EMA-CFR · Centro de Formación Rural">EMA-CFR</button>
+    <button class="est-btn" onclick="setEstacion('dc',this)" title="EMA-DC · Defensa Civil Aeródromo">EMA-DC</button>
+    <button class="est-btn" onclick="setEstacion('cs',this)" title="EMA-CS · Clima Saladillo B° Falucho">EMA-CS</button>
+    <button class="est-btn" onclick="setEstacion('m25',this)" title="EMA-25C · 25Clima — 25 de Mayo">EMA-25C</button>
+    <button class="est-btn" onclick="setEstacion('comp',this)" title="Comparativa 5 estaciones">⇌</button>
+  </div>
   <div class="header-right">
-    <div class="est-sel">
-      <button class="est-btn active" onclick="setEstacion('eet',this)" title="EMA-EET · EEST N°1 Gral. Savio">EMA-EET</button>
-      <button class="est-btn" onclick="setEstacion('cfr',this)" title="EMA-CFR · Centro de Formación Rural">EMA-CFR</button>
-      <button class="est-btn" onclick="setEstacion('dc',this)" title="EMA-DC · Defensa Civil Aeródromo">EMA-DC</button>
-      <button class="est-btn" onclick="setEstacion('cs',this)" title="EMA-CS · Clima Saladillo B° Falucho">EMA-CS</button>
-      <button class="est-btn" onclick="setEstacion('m25',this)" title="EMA-25C · 25Clima — 25 de Mayo">EMA-25C</button>
-      <button class="est-btn" onclick="setEstacion('comp',this)" title="Comparativa 5 estaciones">⇌</button>
-    </div>
     <div class="status">
       <div class="dot" id="dot"></div>
       <span id="status-txt" style="display:none"></span>
