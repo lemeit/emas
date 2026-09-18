@@ -1686,23 +1686,45 @@ async function cargarRosa() {
     });
     const velMedia=velCnt.map((c,i)=>c>0?+(velSum[i]/c).toFixed(1):0);
 
-    if(chartRosa) chartRosa.destroy();
-    chartRosa = new Chart(document.getElementById("chart-rosa"),{
-      type:"polarArea",
-      data:{ labels:RUMBOS, datasets:[{data:freq,
-        backgroundColor:RUMBOS.map((_,i)=>`hsla(${i*22.5},70%,55%,0.6)`),
-        borderColor:RUMBOS.map((_,i)=>`hsla(${i*22.5},70%,65%,0.9)`), borderWidth:1}]},
-      options:rosaOpts()
-    });
+    // Actualizar los datos del chart existente (chart.update()) en vez de
+    // destruir y crear uno nuevo en cada cambio de estación: esto es lo que
+    // realmente causaba el bug reportado (texto pixelado/agrandado justo
+    // después de cambiar de estación, pero nunca en la primera carga) --
+    // confirmado con Chart.js real: tras destroy()+"new Chart()" sobre el
+    // mismo <canvas>, algo asíncrono (probablemente el ResizeObserver
+    // interno de la instancia anterior, que no llega a desengancharse a
+    // tiempo) termina pisando el tamaño recién calculado con uno viejo e
+    // incorrecto -- pasaba siempre, en todos los cambios de estación
+    // subsiguientes, nunca en la primera carga. Reusar la misma instancia
+    // de Chart.js evita ese ciclo de destroy/recrear por completo.
+    if (chartRosa) {
+      chartRosa.data.datasets[0].data = freq;
+      chartRosa.update();
+    } else {
+      chartRosa = new Chart(document.getElementById("chart-rosa"),{
+        type:"polarArea",
+        data:{ labels:RUMBOS, datasets:[{data:freq,
+          backgroundColor:RUMBOS.map((_,i)=>`hsla(${i*22.5},70%,55%,0.6)`),
+          borderColor:RUMBOS.map((_,i)=>`hsla(${i*22.5},70%,65%,0.9)`), borderWidth:1}]},
+        options:rosaOpts()
+      });
+    }
 
-    if(chartVelRosa) chartVelRosa.destroy();
-    chartVelRosa = new Chart(document.getElementById("chart-vel-rosa"),{
-      type:"radar",
-      data:{ labels:RUMBOS, datasets:[{label:"Vel. media (km/h)", data:velMedia,
-        borderColor:ac, backgroundColor:`${ac}22`,
-        pointBackgroundColor:ac, pointRadius:3, borderWidth:1.5}]},
-      options:rosaOpts()
-    });
+    if (chartVelRosa) {
+      chartVelRosa.data.datasets[0].data = velMedia;
+      chartVelRosa.data.datasets[0].borderColor = ac;
+      chartVelRosa.data.datasets[0].backgroundColor = `${ac}22`;
+      chartVelRosa.data.datasets[0].pointBackgroundColor = ac;
+      chartVelRosa.update();
+    } else {
+      chartVelRosa = new Chart(document.getElementById("chart-vel-rosa"),{
+        type:"radar",
+        data:{ labels:RUMBOS, datasets:[{label:"Vel. media (km/h)", data:velMedia,
+          borderColor:ac, backgroundColor:`${ac}22`,
+          pointBackgroundColor:ac, pointRadius:3, borderWidth:1.5}]},
+        options:rosaOpts()
+      });
+    }
   } catch(e){ console.error(e); }
 }
 
@@ -1737,35 +1759,46 @@ async function cargarVientoTemporal() {
     const velData = rowsVel.map(r=>{ const v=parseFloat(r.valor); return isNaN(v)?null:v; });
     const gc      = dark?"rgba(48,54,61,0.4)":"rgba(208,215,222,0.4)";
 
-    if(chartViento) chartViento.destroy();
-    chartViento = new Chart(document.getElementById("chart-viento"),{
-      type:"bar",
-      data:{ labels, datasets:[{ label:"Velocidad (km/h)", data:velData,
-        backgroundColor:velData.map(v=>v>30?"rgba(207,34,46,0.7)":v>15?"rgba(154,103,0,0.7)":"rgba(88,166,255,0.6)"),
-        borderWidth:0 }]},
-      options:{
-        responsive:true,
-        // legend:false (no display:false en un objeto -- se saca la leyenda
-        // entera) -- es justo la leyenda "Velocidad (km/h)" la que aparecía
-        // gigante y distorsionada, superpuesta al gráfico, en el reporte
-        // original; con un solo dataset no aporta nada que no diga ya el
-        // título del gráfico + el texto de abajo, así que en vez de seguir
-        // invirtiendo tiempo en entender por qué Chart.js la dibujaba mal
-        // en este caso puntual, se la reemplaza por un texto HTML fijo
-        // (ver <p> debajo del canvas) que no puede tener ese problema.
-        plugins:{ legend:{display:false},
-          tooltip:{ backgroundColor:dark?"#221E18":"#fff", borderColor:dark?"#3D3028":"#E0D9CC",
-            borderWidth:1, titleColor:tc, bodyColor:dark?"#F2ECE4":"#2A211A",
-            callbacks:{ afterLabel:(ctx)=>{
-              const d=rowsDir[ctx.dataIndex];
-              return d?`Dir: ${gradosARosa(parseFloat(d.valor))} (${parseFloat(d.valor).toFixed(0)}°)`:"";
-            }}}},
-        scales:{
-          x:{ticks:{color:tc,font:{family:"JetBrains Mono",size:9},maxTicksLimit:12,maxRotation:45},grid:{color:gc}},
-          y:{ticks:{color:tc,font:{family:"JetBrains Mono",size:10}},grid:{color:gc},beginAtZero:true}
+    const bgVel = velData.map(v=>v>30?"rgba(207,34,46,0.7)":v>15?"rgba(154,103,0,0.7)":"rgba(88,166,255,0.6)");
+    // Mismo motivo que en cargarRosa(): update() sobre la instancia
+    // existente en vez de destroy()+"new Chart()" en cada cambio de
+    // estación -- ver el comentario grande de ahí arriba, este era
+    // exactamente el chart donde más se notaba el bug.
+    if (chartViento) {
+      chartViento.data.labels = labels;
+      chartViento.data.datasets[0].data = velData;
+      chartViento.data.datasets[0].backgroundColor = bgVel;
+      // El callback de tooltip captura rowsDir por clausura -- se reemplaza
+      // la función entera para que apunte a los datos de la estación nueva
+      // (si no, el tooltip seguiría mostrando la dirección de la estación
+      // anterior).
+      chartViento.options.plugins.tooltip.callbacks.afterLabel = (ctx) => {
+        const d = rowsDir[ctx.dataIndex];
+        return d ? `Dir: ${gradosARosa(parseFloat(d.valor))} (${parseFloat(d.valor).toFixed(0)}°)` : "";
+      };
+      chartViento.update();
+    } else {
+      chartViento = new Chart(document.getElementById("chart-viento"),{
+        type:"bar",
+        data:{ labels, datasets:[{ label:"Velocidad (km/h)", data:velData,
+          backgroundColor:bgVel,
+          borderWidth:0 }]},
+        options:{
+          responsive:true,
+          plugins:{ legend:{labels:{color:tc,font:{family:"JetBrains Mono",size:11}}},
+            tooltip:{ backgroundColor:dark?"#221E18":"#fff", borderColor:dark?"#3D3028":"#E0D9CC",
+              borderWidth:1, titleColor:tc, bodyColor:dark?"#F2ECE4":"#2A211A",
+              callbacks:{ afterLabel:(ctx)=>{
+                const d=rowsDir[ctx.dataIndex];
+                return d?`Dir: ${gradosARosa(parseFloat(d.valor))} (${parseFloat(d.valor).toFixed(0)}°)`:"";
+              }}}},
+          scales:{
+            x:{ticks:{color:tc,font:{family:"JetBrains Mono",size:9},maxTicksLimit:12,maxRotation:45},grid:{color:gc}},
+            y:{ticks:{color:tc,font:{family:"JetBrains Mono",size:10}},grid:{color:gc},beginAtZero:true}
+          }
         }
-      }
-    });
+      });
+    }
   } catch(e){ console.error(e); }
 }
 
