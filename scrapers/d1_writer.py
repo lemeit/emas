@@ -49,9 +49,24 @@ INSERT_SQL = """
 
 
 def _fecha_ar_a_utc(fecha_ar):
-    """'DD/MM/YYYY HH:MM' (hora Argentina, UTC-3 fijo) -> 'YYYY-MM-DD HH:MM:SS' (UTC)."""
-    dt_local = datetime.strptime(fecha_ar.strip(), "%d/%m/%Y %H:%M").replace(tzinfo=TZ_AR)
-    return dt_local.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    """'DD/MM/YYYY HH:MM' o 'DD/MM/YY HH:MM' (hora Argentina, UTC-3 fijo) ->
+    'YYYY-MM-DD HH:MM:SS' (UTC).
+
+    Se prueban los dos formatos de año (4 y 2 dígitos) porque al menos una
+    fuente (la página del CFR) cambió en algún momento de 4 a 2 dígitos sin
+    aviso, y antes esto tiraba ValueError silenciosamente descartado fila
+    por fila en guardar_en_d1() -- casi un mes entero de EMA-CFR se perdió
+    así, sin ningún error visible. Si en el futuro aparece un tercer
+    formato, guardar_en_d1() ahora sí lo va a hacer notar (ver más abajo).
+    """
+    texto = fecha_ar.strip()
+    for fmt in ("%d/%m/%Y %H:%M", "%d/%m/%y %H:%M"):
+        try:
+            dt_local = datetime.strptime(texto, fmt).replace(tzinfo=TZ_AR)
+            return dt_local.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            continue
+    raise ValueError(f"formato de fecha no reconocido: {fecha_ar!r}")
 
 
 def _normalizar_fecha_utc(valor):
@@ -95,14 +110,28 @@ def guardar_en_d1(estacion_d1, filas):
 
     Devuelve la cantidad de filas enviadas a D1 (no necesariamente
     insertadas: INSERT OR IGNORE descarta duplicados en silencio).
+
+    Si hay filas con un valor válido para guardar pero NINGUNA termina
+    insertándose (por ejemplo: todas con una fecha en un formato que
+    _fecha_ar_a_utc() no reconoce), se levanta RuntimeError en vez de
+    devolver 0 calladamente -- así lo agarra el try/except que ya tiene
+    cada scraper alrededor de este llamado, y sale como un fallo visible
+    (exit code != 0) en vez de perderse. Así se rompió EMA-CFR sin que
+    ninguna corrida de GitHub Actions se viera en rojo: el sitio cambió el
+    formato de la fecha, cada fila se descartaba en el continue de abajo, y
+    guardar_en_d1() devolvía 0 como si simplemente no hubiera habido nada
+    que mandar.
     """
     if not filas:
         return 0
 
+    elegibles = 0
+    fecha_invalida = 0
     enviados = 0
     for f in filas:
         if f.get("valor") is None:
             continue
+        elegibles += 1
 
         fecha_utc = f.get("fecha_hora_utc")
         if fecha_utc:
@@ -113,7 +142,9 @@ def guardar_en_d1(estacion_d1, filas):
                 continue
             try:
                 fecha_utc = _fecha_ar_a_utc(fecha_ar)
-            except ValueError:
+            except ValueError as e:
+                fecha_invalida += 1
+                print(f"  ⚠  D1: fecha descartada ({e})")
                 continue
 
         params = [
@@ -127,5 +158,12 @@ def guardar_en_d1(estacion_d1, filas):
         ]
         _d1_query(INSERT_SQL, params)
         enviados += 1
+
+    if elegibles > 0 and enviados == 0:
+        detalle = f", {fecha_invalida} por fecha con formato inesperado" if fecha_invalida else ""
+        raise RuntimeError(
+            f"0 de {elegibles} fila(s) con valor válido se guardaron en D1{detalle} "
+            f"-- revisar la fuente de la estación {estacion_d1}"
+        )
 
     return enviados
