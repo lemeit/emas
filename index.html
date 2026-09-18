@@ -397,16 +397,12 @@ canvas{width:100% !important}
             <option value="720">30 días</option>
           </select>
         </div>
-        <div class="chart-canvas-wrap" style="position:relative;height:340px">
-          <canvas id="chart-rosa" style="position:absolute;top:0;left:0;width:100%;height:100%"></canvas>
-        </div>
+        <canvas id="chart-rosa" height="260"></canvas>
         <p style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:6px;text-align:center">Horas que sopló desde cada rumbo</p>
       </div>
       <div class="chart-wrap">
         <div class="chart-hdr"><h2>Velocidad media por rumbo</h2></div>
-        <div class="chart-canvas-wrap" style="position:relative;height:340px">
-          <canvas id="chart-vel-rosa" style="position:absolute;top:0;left:0;width:100%;height:100%"></canvas>
-        </div>
+        <canvas id="chart-vel-rosa" height="260"></canvas>
         <p style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:6px;text-align:center">Promedio (km/h) por dirección</p>
       </div>
     </div>
@@ -421,6 +417,7 @@ canvas{width:100% !important}
       <div class="chart-canvas-wrap" style="position:relative;height:200px">
         <canvas id="chart-viento" style="position:absolute;top:0;left:0;width:100%;height:100%"></canvas>
       </div>
+      <p style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:6px;text-align:center">Velocidad del viento (km/h) — rojo &gt;30, naranja &gt;15</p>
     </div>
   </div>
 
@@ -1621,33 +1618,22 @@ function renderChartMultiParam(rows) {
 ═══════════════════════════════════════════ */
 let chartRosa=null, chartVelRosa=null, chartViento=null;
 
-// Barras horizontales en vez de gráfico polar/radar: los 16 rumbos como
-// categorías en el eje Y son un tipo de gráfico "cartesiano" mucho más
-// simple y estándar que polarArea/radar -- se probó exhaustivamente (con
-// Chart.js real, con el plugin de zoom real, con distintos devicePixelRatio,
-// simulando lecturas faltantes/NaN del sensor) tratando de reproducir la
-// distorsión reportada en los gráficos circulares sin lograrlo, así que en
-// vez de seguir apostando a ciegas se cambia a un tipo de gráfico con mucha
-// menos superficie para ese tipo de bug y, de paso, más fácil de leer para
-// alguien sin costumbre de leer una rosa de vientos polar.
-function rosaBarOpts(unidad) {
+function rosaOpts() {
   const dark = document.documentElement.getAttribute("data-theme") !== "light";
   const tc   = dark ? "#C9BEB2" : "#6B5C4E";
   const gc   = dark ? "rgba(48,54,61,0.7)" : "rgba(208,215,222,0.7)";
   return {
     responsive:true,
-    maintainAspectRatio:false,
-    indexAxis:"y",
     plugins:{ legend:{display:false},
       tooltip:{ backgroundColor:dark?"#221E18":"#fff", borderColor:dark?"#3D3028":"#E0D9CC",
         borderWidth:1, titleColor:tc, bodyColor:dark?"#D9691F":"#9B3D00",
-        titleFont:{family:"JetBrains Mono",size:10}, bodyFont:{family:"JetBrains Mono",size:11},
-        callbacks:{ label:(ctx)=>` ${ctx.parsed.x}${unidad}` } }
+        titleFont:{family:"JetBrains Mono",size:10}, bodyFont:{family:"JetBrains Mono",size:11} }
     },
-    scales:{
-      x:{ beginAtZero:true, ticks:{color:tc,font:{family:"JetBrains Mono",size:9}}, grid:{color:gc} },
-      y:{ ticks:{color:tc,font:{family:"JetBrains Mono",size:10}}, grid:{display:false} }
-    }
+    scales:{ r:{ beginAtZero:true,
+      ticks:{color:tc,font:{family:"JetBrains Mono",size:9},backdropColor:"transparent"},
+      grid:{color:gc}, pointLabels:{color:dark?"#F2ECE4":"#2A211A",font:{family:"JetBrains Mono",size:10}},
+      angleLines:{color:gc}
+    }}
   };
 }
 
@@ -1691,19 +1677,20 @@ async function cargarRosa() {
 
     if(chartRosa) chartRosa.destroy();
     chartRosa = new Chart(document.getElementById("chart-rosa"),{
-      type:"bar",
+      type:"polarArea",
       data:{ labels:RUMBOS, datasets:[{data:freq,
         backgroundColor:RUMBOS.map((_,i)=>`hsla(${i*22.5},70%,55%,0.6)`),
         borderColor:RUMBOS.map((_,i)=>`hsla(${i*22.5},70%,65%,0.9)`), borderWidth:1}]},
-      options:rosaBarOpts(" h")
+      options:rosaOpts()
     });
 
     if(chartVelRosa) chartVelRosa.destroy();
     chartVelRosa = new Chart(document.getElementById("chart-vel-rosa"),{
-      type:"bar",
+      type:"radar",
       data:{ labels:RUMBOS, datasets:[{label:"Vel. media (km/h)", data:velMedia,
-        backgroundColor:`${ac}99`, borderColor:ac, borderWidth:1}]},
-      options:rosaBarOpts(" km/h")
+        borderColor:ac, backgroundColor:`${ac}22`,
+        pointBackgroundColor:ac, pointRadius:3, borderWidth:1.5}]},
+      options:rosaOpts()
     });
   } catch(e){ console.error(e); }
 }
@@ -1747,7 +1734,15 @@ async function cargarVientoTemporal() {
         borderWidth:0 }]},
       options:{
         responsive:true,
-        plugins:{ legend:{labels:{color:tc,font:{family:"JetBrains Mono",size:11}}},
+        // legend:false (no display:false en un objeto -- se saca la leyenda
+        // entera) -- es justo la leyenda "Velocidad (km/h)" la que aparecía
+        // gigante y distorsionada, superpuesta al gráfico, en el reporte
+        // original; con un solo dataset no aporta nada que no diga ya el
+        // título del gráfico + el texto de abajo, así que en vez de seguir
+        // invirtiendo tiempo en entender por qué Chart.js la dibujaba mal
+        // en este caso puntual, se la reemplaza por un texto HTML fijo
+        // (ver <p> debajo del canvas) que no puede tener ese problema.
+        plugins:{ legend:{display:false},
           tooltip:{ backgroundColor:dark?"#221E18":"#fff", borderColor:dark?"#3D3028":"#E0D9CC",
             borderWidth:1, titleColor:tc, bodyColor:dark?"#F2ECE4":"#2A211A",
             callbacks:{ afterLabel:(ctx)=>{
