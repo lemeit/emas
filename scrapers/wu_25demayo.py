@@ -53,6 +53,7 @@ Proyecto: Integración EMA Saladillo — EEST N°1 "Gral. Savio"
 """
 
 import os
+import sys
 import requests
 import json
 import csv
@@ -186,12 +187,21 @@ def main():
     args = parser.parse_args()
 
     def ciclo():
+        """Devuelve True si el ciclo salió bien, False si algo falló --
+        para que main() pueda terminar con código de salida != 0 y una
+        corrida de GitHub Actions se vea roja de verdad, en vez de quedar
+        en verde con un error impreso que nadie llega a leer (ver bitácora
+        / auditoría horaria). "Sin datos" (datos=[]) NO cuenta como falla
+        acá a propósito: EMA-25C es una estación de terceros (25Clima, no
+        propia del proyecto) que puede estar momentáneamente sin reportar
+        en Weather Underground sin que sea un error de nuestro lado."""
+        ok = True
         try:
             datos, raw = obtener_datos()
 
             if args.json:
                 print(json.dumps(raw, indent=2, ensure_ascii=False))
-                return
+                return True
 
             enviados = None
             if not args.nod1 and datos:
@@ -199,11 +209,14 @@ def main():
                     enviados = guardar_en_d1_desde_wu(datos)
                 except Exception as e:
                     print(f"  ⚠  D1: {e}")
+                    ok = False
 
             mostrar_consola(datos, enviados, offline=not datos)
 
             if args.csv and datos:
                 exportar_csv(datos)
+
+            return ok
 
         except requests.HTTPError as e:
             print(f"\n  ✖ Error HTTP: {e}")
@@ -211,6 +224,7 @@ def main():
             print("\n  ✖ Sin conexión a api.weather.com")
         except Exception as e:
             print(f"\n  ✖ Error inesperado: {e}")
+        return False
 
     if args.loop > 0:
         print(f"  Modo automático — cada {args.loop//60} min. Ctrl+C para detener.\n")
@@ -218,7 +232,8 @@ def main():
             ciclo()
             time.sleep(args.loop)
     else:
-        ciclo()
+        if not ciclo():
+            sys.exit(1)
 
 
 if __name__ == "__main__":

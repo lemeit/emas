@@ -22,6 +22,7 @@ Fuente:   SNIH / INA — datos sin validar — citar la fuente al publicar
 """
 
 import os
+import sys
 import requests
 import json
 import csv
@@ -195,12 +196,18 @@ def main():
     args = parser.parse_args()
 
     def ciclo():
+        """Devuelve True si el ciclo salió bien (consulta + guardado en D1,
+        cuando corresponde), False si algo falló -- para que main() pueda
+        terminar con código de salida != 0 y una corrida de GitHub Actions
+        se vea roja de verdad, en vez de quedar en verde con un error
+        impreso que nadie llega a leer (ver bitácora / auditoría horaria)."""
+        ok = True
         try:
             mediciones = obtener_datos_actuales()
 
             if args.json:
                 print(json.dumps(mediciones, indent=2, ensure_ascii=False))
-                return
+                return True
 
             resultado_d1 = None
             if not args.nod1:
@@ -208,11 +215,14 @@ def main():
                     resultado_d1 = guardar_en_d1_desde_snih(mediciones)
                 except Exception as e:
                     print(f"  ⚠  D1: {e}")
+                    ok = False
 
             mostrar_consola(mediciones, resultado_d1)
 
             if args.csv:
                 exportar_csv(mediciones)
+
+            return ok
 
         except requests.HTTPError as e:
             print(f"\n  ✖ Error HTTP SNIH: {e}")
@@ -225,6 +235,7 @@ def main():
             print(f"\n  ✖ {e}")
         except Exception as e:
             print(f"\n  ✖ Error inesperado: {e}")
+        return False
 
     if args.loop > 0:
         print(f"  Modo automático — cada {args.loop//60} min. Ctrl+C para detener.\n")
@@ -232,7 +243,8 @@ def main():
             ciclo()
             time.sleep(args.loop)
     else:
-        ciclo()
+        if not ciclo():
+            sys.exit(1)
 
 
 if __name__ == "__main__":
