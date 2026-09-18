@@ -1352,14 +1352,9 @@ function downloadHistorialPdf() {
   const est = ESTACIONES[estActual];
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "landscape" });
-  const fontSize = 9;
-  doc.setFont("courier", "normal");
-  doc.setFontSize(fontSize);
-  const lineHeight = fontSize * 1.4;
   const marginLeft = 36;
+  const marginRight = 36;
   const marginTop = 40;
-  const pageBottom = doc.internal.pageSize.getHeight() - 36;
-  let y = marginTop;
 
   const cols = histColsVisibles();
   const colDefs = [
@@ -1371,6 +1366,24 @@ function downloadHistorialPdf() {
       align: "right",
     })),
   ];
+
+  // Tamaño de letra más grande (hasta 9pt) que hace entrar la fila completa
+  // en el ancho de la página -- con pocas columnas queda en 9pt como antes,
+  // pero una estación con muchos parámetros (ej. EMA-25C o EMA-DC, 9
+  // columnas de datos) antes se cortaba en silencio al costado de la hoja
+  // porque el tamaño estaba fijo. Courier es monoespaciada, así que alcanza
+  // con medir el ancho de un relleno del mismo largo a un tamaño de
+  // referencia y escalar proporcional.
+  const totalChars = colDefs.reduce((n, c) => n + c.width + 1, 0); // +1: separador entre columnas
+  const usableWidth = doc.internal.pageSize.getWidth() - marginLeft - marginRight;
+  doc.setFont("courier", "normal");
+  doc.setFontSize(10);
+  const anchoA10pt = doc.getTextWidth("0".repeat(totalChars));
+  const fontSize = Math.min(9, Math.max(4, Math.floor((10 * usableWidth / anchoA10pt) * 2) / 2));
+  doc.setFontSize(fontSize);
+  const lineHeight = fontSize * 1.4;
+  const pageBottom = doc.internal.pageSize.getHeight() - 36;
+  let y = marginTop;
 
   function fila(valores) {
     return colDefs.map((c, i) => {
