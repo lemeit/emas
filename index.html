@@ -129,6 +129,39 @@ td.muted{color:var(--muted);font-size:11px}
 .chart-hdr h2{font-size:13px;font-weight:500;flex:1;min-width:0}
 canvas{width:100% !important}
 
+/* ── Controles de Historial/Gráfico armonizados con aq.lemeit.ar: selector
+   de fechas, filtro de parámetros con checkboxes, botones de exportar,
+   selector múltiple de parámetros del Gráfico y aviso de zoom. ── */
+.table-hdr{flex-direction:column;align-items:stretch}
+.table-hdr-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.hist-info-text{font-size:11px;color:var(--muted);padding:8px 14px;margin:0;border-bottom:1px solid var(--border)}
+.hist-info-text a{color:var(--accent)}
+
+.param-filter{
+  display:flex;flex-wrap:wrap;gap:4px 14px;padding:8px 14px;
+  border-bottom:1px solid var(--border);
+  font-family:var(--mono);font-size:10px;color:var(--muted);
+}
+.param-filter label{display:flex;align-items:center;gap:5px;cursor:pointer}
+.param-filter:empty{display:none;padding:0;border-bottom:none}
+.param-filter-label{display:flex;align-items:center;color:var(--muted)}
+
+.export-btn{
+  font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--bg);
+  border:1px solid var(--border);border-radius:6px;padding:5px 9px;cursor:pointer;
+  transition:border-color .15s,color .15s;
+}
+.export-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+.zoom-hint{font-family:var(--mono);font-size:10px;color:var(--muted);opacity:.7;margin-top:8px}
+
+.param-toggle{
+  display:flex;flex-wrap:wrap;gap:6px 14px;margin-bottom:10px;padding-bottom:10px;
+  border-bottom:1px solid var(--border);font-family:var(--mono);font-size:10px;color:var(--muted);
+}
+.param-toggle-item{display:flex;align-items:center;gap:5px;cursor:pointer}
+.param-toggle-swatch{display:inline-block;width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
 /* ── COMPARATIVA ── */
 .comp-card{background:var(--surf);border:1px solid var(--border);border-radius:10px;overflow:hidden}
 .comp-header{padding:8px 12px;border-bottom:1px solid var(--border);background:var(--surf2);
@@ -302,19 +335,26 @@ canvas{width:100% !important}
     <div class="table-wrap">
       <div class="table-hdr">
         <h2 id="hist-titulo">Registros recientes</h2>
-        <select class="sel" id="sel-param" onchange="cargarHistorial()">
-          <option value="Temperatura">Temperatura</option>
-          <option value="Humedad">Humedad</option>
-          <option value="Lluvia diaria">Lluvia diaria</option>
-          <option value="Presión">Presión</option>
-          <option value="Vel. viento">Vel. viento</option>
-        </select>
-        <select class="sel" id="sel-limit" onchange="cargarHistorial()">
-          <option value="48">48 reg.</option>
-          <option value="100">100 reg.</option>
-          <option value="200">200 reg.</option>
-        </select>
+        <div class="table-hdr-controls">
+          <select class="sel" id="sel-param" onchange="cargarHistorial()" style="display:none">
+            <!-- Solo se muestra (y se usa) en modo Comparativa -- fuera de
+                 ese modo, la selección de parámetros pasa por los checkboxes
+                 de #hist-param-filter, más abajo. -->
+          </select>
+          <select class="sel" id="sel-range-hist" onchange="onHistRangeChange()">
+            <option value="48">48 h</option>
+            <option value="168">7 días</option>
+            <option value="720">30 días</option>
+            <option value="custom">Rango de fechas…</option>
+          </select>
+          <input type="date" class="sel" id="hist-desde" style="display:none" onchange="loadHistorialTable()">
+          <input type="date" class="sel" id="hist-hasta" style="display:none" onchange="loadHistorialTable()">
+          <button class="export-btn" id="hist-export-btn" onclick="downloadHistorialCsv()">Descargar CSV</button>
+          <button class="export-btn" id="hist-export-pdf-btn" onclick="downloadHistorialPdf()">Descargar PDF (reporte)</button>
+        </div>
       </div>
+      <p class="hist-info-text" id="hist-info-text">La descarga trae lo filtrado en pantalla, con un tope de 20.000 filas — para más rango de una vez, usá <code>desde</code>/<code>hasta</code> directo contra la <a href="api.html" target="_blank">API</a>.</p>
+      <div class="param-filter" id="hist-param-filter"></div>
       <div id="tabla-wrap"><div class="loader">—</div></div>
     </div>
   </div>
@@ -324,29 +364,24 @@ canvas{width:100% !important}
     <div class="chart-wrap">
       <div class="chart-hdr">
         <h2 id="graf-titulo">Serie temporal</h2>
-        <select class="sel" id="sel-param-chart" onchange="onGrafParamChange()">
-          <option value="Temperatura">Temperatura</option>
-          <option value="Humedad">Humedad</option>
-          <option value="Presión">Presión</option>
-          <option value="Vel. viento">Vel. viento</option>
-          <option value="Ráfaga">Ráfaga</option>
-          <option value="Lluvia">Lluvia</option>
-          <option value="Punto de rocío">Punto de rocío</option>
-          <option value="Radiación solar">Radiación solar</option>
-          <option value="Temp. máxima">Temp. máxima</option>
-          <option value="Temp. mínima">Temp. mínima</option>
-          <option value="Sensación térmica">Sensación térmica</option>
+        <select class="sel" id="sel-param-chart" onchange="onGrafParamChange()" style="display:none">
+          <!-- Solo visible/usado en modo Comparativa (ver setEstacion) --
+               fuera de ese modo, el Gráfico usa el selector múltiple de
+               parámetros #param-toggle-grafico, con checkboxes. -->
         </select>
         <select class="sel" id="sel-limit-chart" onchange="onGrafParamChange()">
           <option value="48">48 h</option>
           <option value="168">7 días</option>
           <option value="720">30 días</option>
         </select>
+        <button class="export-btn" id="reset-zoom-btn" onclick="resetChartZoom()" style="display:none">↺ Reset zoom</button>
       </div>
+      <div class="param-toggle" id="param-toggle-grafico"></div>
       <div class="chart-canvas-wrap" style="position:relative;height:300px">
         <canvas id="chart" style="position:absolute;top:0;left:0;width:100%;height:100%"></canvas>
         <canvas id="chart-comp" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%"></canvas>
       </div>
+      <div class="zoom-hint" id="zoom-hint-grafico">🔍 Arrastrá sobre el gráfico para hacer zoom · rueda del mouse para acercar/alejar · pellizcá para zoom táctil · Ctrl+arrastrar para desplazarte una vez con zoom</div>
     </div>
   </div>
 
@@ -686,6 +721,21 @@ canvas{width:100% !important}
 <footer class="lm-footer" id="lm-footer"></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<!-- hammer.js + chartjs-plugin-zoom: zoom por selección/rueda/pellizco y pan
+     en el Gráfico (igual que aq.lemeit.ar). jsPDF: exportar el histórico de
+     la pestaña Historial como PDF de texto plano. Con respaldo a cdnjs por
+     si jsDelivr falla (y viceversa para jsPDF), mismo patrón que aq. -->
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js';document.head.appendChild(s);"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.2.0/chartjs-plugin-zoom.min.js';document.head.appendChild(s);"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js';document.head.appendChild(s);"></script>
+<script>
+  // chartjs-plugin-zoom puede cargar después de este bloque (viene de un
+  // <script src> separado) -- se registra en el evento "load" de la propia
+  // página, igual que en aq, en vez de asumir que ya está disponible acá.
+  window.addEventListener("load", () => {
+    if (window.Chart && window.ChartZoom) Chart.register(window.ChartZoom);
+  });
+</script>
 <script src="https://design.lemeit.ar/lemeit-common.js"></script>
 <script>
 
@@ -892,8 +942,16 @@ function setEstacion(id, btn) {
     selChart.innerHTML = Object.keys(COMP_MAP)
       .map(k => `<option value="${k}">${k}</option>`).join("");
     selChart.value = "Temperatura";
+    // El Gráfico en modo Comparativa usa este dropdown de siempre (un
+    // parámetro común a las 5 estaciones), no el selector múltiple por
+    // estación -- se muestra uno, se oculta el otro.
+    selChart.style.display = "";
+    document.getElementById("param-toggle-grafico").style.display = "none";
 
-    // Poblar selector de historial también
+    // Poblar selector de historial también (Historial no hace nada en modo
+    // Comparativa -- ver guarda "if (estActual === 'comp') return;" en
+    // cargarHistorial/loadHistorialTable -- se deja poblado por consistencia
+    // aunque hoy no se usa su valor).
     const selHist = document.getElementById("sel-param");
     selHist.innerHTML = Object.keys(COMP_MAP)
       .map(k => `<option value="${k}">${k}</option>`).join("");
@@ -911,15 +969,16 @@ function setEstacion(id, btn) {
   document.getElementById("h-sub").textContent    = est.sub;
   renderFooterEma();
 
-  // Restaurar selectores con parámetros propios de esta estación
-  const paramKeys = Object.keys(est.paramHistorial);
-  ["sel-param","sel-param-chart"].forEach(selId => {
-    const sel = document.getElementById(selId);
-    const prevVal = sel.value;
-    sel.innerHTML = paramKeys.map(k => `<option value="${k}">${k}</option>`).join("");
-    // Si el valor anterior existe en esta estación, mantenerlo; sino ir al primero
-    sel.value = paramKeys.includes(prevVal) ? prevVal : paramKeys[0];
-  });
+  // Fuera de Comparativa: el Gráfico usa el selector múltiple de parámetros
+  // propio de esta estación (checkboxes, uno por parámetro no-rosa), no el
+  // dropdown de comparativa -- se reconstruye entero porque cada estación
+  // tiene su propia lista de parámetros. El filtro de columnas de Historial
+  // también se reinicia: los parámetros ocultados en una estación no tienen
+  // por qué existir (ni tener el mismo sentido) en otra.
+  document.getElementById("sel-param-chart").style.display = "none";
+  document.getElementById("param-toggle-grafico").style.display = "";
+  renderParamToggleGrafico();
+  histHiddenParams = new Set();
 
   const tabActivo = document.querySelector(".nav-btn.active")?.getAttribute("onclick")?.match(/'(\w+)'/)?.[1];
   if (tabActivo === "actuales" || !tabActivo) cargarActuales();
@@ -1144,115 +1203,400 @@ async function cargarComparativa() {
 }
 
 /* ═══════════════════════════════════════════
-   HISTORIAL
+   HISTORIAL — tabla multi-parámetro + CSV/PDF, armonizado con aq.lemeit.ar.
+   Usa el endpoint "wide" del Worker (/rest/v1/:tabla/historico), que pivotea
+   el long-format de `mediciones` a una fila por timestamp, una columna por
+   parámetro -- igual forma que ya devuelve la API de aq.
 ═══════════════════════════════════════════ */
-async function cargarHistorial() {
-  if (estActual === "comp") return;
-  const est   = ESTACIONES[estActual];
-  const param = document.getElementById("sel-param").value;
-  const limit = document.getElementById("sel-limit").value;
-  const pid   = est.paramHistorial[param];
+let histRows = [];
+let histHiddenParams = new Set();
 
+// Parámetros graficables/tabulables de una estación: se excluyen los que
+// tienen rosa:true (dirección de viento), que ya se muestran aparte en la
+// pestaña "Rosa de vientos" como ángulo, no como serie temporal -- el
+// dropdown viejo de Gráfico tampoco los ofrecía.
+function chartableParams(est) {
+  return est.params.filter(p => !p.rosa);
+}
+
+function onHistRangeChange() {
+  const custom = document.getElementById("sel-range-hist").value === "custom";
+  document.getElementById("hist-desde").style.display = custom ? "" : "none";
+  document.getElementById("hist-hasta").style.display = custom ? "" : "none";
+  if (!custom) loadHistorialTable();
+  // en "custom" se espera a que se completen las dos fechas -- el onchange
+  // de esos inputs ya llama a loadHistorialTable().
+}
+
+// Arma el query string contra el Worker. Devuelve null si el usuario eligió
+// "rango de fechas" pero todavía no completó las dos fechas.
+function histQueryParams() {
+  const range = document.getElementById("sel-range-hist").value;
+  if (range === "custom") {
+    const desde = document.getElementById("hist-desde").value;
+    const hasta = document.getElementById("hist-hasta").value;
+    if (!desde || !hasta) return null;
+    return `desde=${desde}&hasta=${hasta}`;
+  }
+  return `horas=${range}`;
+}
+
+function histRangoTexto() {
+  const range = document.getElementById("sel-range-hist").value;
+  if (range === "custom") {
+    const desde = document.getElementById("hist-desde").value;
+    const hasta = document.getElementById("hist-hasta").value;
+    return desde && hasta ? `${desde} a ${hasta}` : "—";
+  }
+  return { "48": "últimas 48 horas", "168": "últimos 7 días", "720": "últimos 30 días" }[range] || `últimas ${range} horas`;
+}
+
+async function cargarHistorial() { await loadHistorialTable(); }
+
+async function loadHistorialTable() {
+  if (estActual === "comp") return;
+  const est = ESTACIONES[estActual];
+  const qp = histQueryParams();
+  if (qp === null) return;
   document.getElementById("tabla-wrap").innerHTML = '<div class="loader">Cargando...</div>';
   try {
-    const q = est.campoParam === "codigo"
-      ? `select=fecha_hora_ar,valor,unidad&codigo=eq.${pid}&order=fecha_hora_utc.desc&limit=${limit}`
-      : `select=fecha_hora_ar,valor,unidad&parametro=eq.${encodeURIComponent(pid)}&order=insertado_en.desc&limit=${limit}`;
-
-    const rows = await supaFetch(est.tabla, q);
+    const rows = await supaFetch(`${est.tabla}/historico`, qp);
+    histRows = rows;
     if (!rows.length) {
+      document.getElementById("hist-param-filter").innerHTML = "";
       document.getElementById("tabla-wrap").innerHTML = '<div class="loader">Sin datos.</div>';
       return;
     }
-    const filas = rows.map(r =>
-      `<tr><td class="muted">${r.fecha_hora_ar||"—"}</td><td class="num">${parseFloat(r.valor).toFixed(2)}</td><td>${r.unidad||""}</td></tr>`
-    ).join("");
-    document.getElementById("tabla-wrap").innerHTML = `
-      <table>
-        <thead><tr><th>Fecha / hora</th><th>${param}</th><th>Unidad</th></tr></thead>
-        <tbody>${filas}</tbody>
-      </table>`;
-  } catch(e) {
+    renderHistParamFilter();
+    renderHistTable();
+  } catch (e) {
     document.getElementById("tabla-wrap").innerHTML =
       `<div class="loader" style="color:var(--red)">Error: ${e.message}</div>`;
   }
 }
 
+// Parámetros de la estación actual que efectivamente tienen algún dato en
+// las filas cargadas (una estación puede reportar menos parámetros de los
+// que tiene definidos, o el rango elegido puede no traer alguno).
+function histDisponibles() {
+  const est = ESTACIONES[estActual];
+  return chartableParams(est).filter((p) => histRows.some((r) => r[p.id] != null));
+}
+
+function histColsVisibles() {
+  return histDisponibles().filter((p) => !histHiddenParams.has(String(p.id)));
+}
+
+function renderHistParamFilter() {
+  document.getElementById("hist-param-filter").innerHTML =
+    `<span class="param-filter-label">Parámetros:</span>` +
+    histDisponibles().map((p) => `
+      <label>
+        <input type="checkbox" ${histHiddenParams.has(String(p.id)) ? "" : "checked"}
+          onchange="toggleHistParam('${p.id}', this.checked)">
+        ${p.ico} ${p.nombre}
+      </label>
+    `).join("");
+}
+
+function toggleHistParam(key, visible) {
+  if (visible) histHiddenParams.delete(String(key));
+  else histHiddenParams.add(String(key));
+  renderHistTable();
+}
+
+function renderHistTable() {
+  const cols = histColsVisibles();
+  document.getElementById("tabla-wrap").innerHTML = renderTablaNormal(cols);
+}
+
+function renderTablaNormal(cols) {
+  const filas = histRows.slice().reverse().map((r) => `<tr>
+      <td class="muted">${r.fecha_hora_ar || "—"}</td>
+      ${cols.map((c) => {
+        const v = r[c.id];
+        return `<td class="num">${v == null ? "—" : parseFloat(v).toFixed(c.dec ?? 1)}</td>`;
+      }).join("")}
+    </tr>`).join("");
+  const headers = cols.map((c) => `<th>${c.nombre} <span class="th-unit">(${c.unidad})</span></th>`).join("");
+  return `
+    <table>
+      <thead><tr><th>Fecha / hora</th>${headers}</tr></thead>
+      <tbody>${filas}</tbody>
+    </table>`;
+}
+
+function downloadHistorialCsv() {
+  if (estActual === "comp") return;
+  const est = ESTACIONES[estActual];
+  const qp = histQueryParams();
+  if (qp === null) return;
+  window.open(`${SUPA_URL}/rest/v1/${est.tabla}/historico?${qp}&formato=csv`, "_blank");
+}
+
+function padRight(s, n) { s = String(s); return s.length >= n ? s.slice(0, n) : s + " ".repeat(n - s.length); }
+function padLeft(s, n) { s = String(s); return s.length >= n ? s.slice(0, n) : " ".repeat(n - s.length) + s; }
+
+// Descarga el histórico en PDF de texto plano/fuente monoespaciada, estilo
+// resumen climatológico de estación meteorológica -- mismo formato "reporte"
+// que aq.lemeit.ar, con jsPDF y la fuente Courier incorporada (sin embeber
+// archivos de fuente aparte). fecha_hora_ar ya viene con ancho fijo
+// (DD/MM/YYYY HH:MM) desde el Worker, así que no hace falta reformatearla
+// acá para que las columnas queden alineadas.
+function downloadHistorialPdf() {
+  if (!histRows.length || estActual === "comp") return;
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    alert("No se pudo cargar el generador de PDF (jsPDF). Puede ser el bloqueador de anuncios/contenido del navegador, o que se haya cortado la conexión a internet. Probá recargar la página o desactivar el bloqueador para este sitio y volvé a intentar.");
+    return;
+  }
+  const est = ESTACIONES[estActual];
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "landscape" });
+  const fontSize = 9;
+  doc.setFont("courier", "normal");
+  doc.setFontSize(fontSize);
+  const lineHeight = fontSize * 1.4;
+  const marginLeft = 36;
+  const marginTop = 40;
+  const pageBottom = doc.internal.pageSize.getHeight() - 36;
+  let y = marginTop;
+
+  const cols = histColsVisibles();
+  const colDefs = [
+    { key: "_ts", header: "FECHA/HORA", width: 17, align: "left" },
+    ...cols.map((c) => ({
+      key: c.id,
+      header: `${c.nombre.toUpperCase()} (${c.unidad})`,
+      width: Math.max(c.nombre.length + c.unidad.length + 5, 11),
+      align: "right",
+    })),
+  ];
+
+  function fila(valores) {
+    return colDefs.map((c, i) => {
+      const v = valores[i];
+      return c.align === "left" ? padRight(v, c.width) : padLeft(v, c.width);
+    }).join(" ");
+  }
+
+  function printHeaderBlock() {
+    doc.setFont("courier", "bold");
+    doc.text("MONITOREO AMBIENTAL ESCOLAR — RED EMAS", marginLeft, y);
+    y += lineHeight * 1.3;
+    doc.setFont("courier", "normal");
+    doc.text(`Estacion: ${est.nombre}  -  Rango: ${histRangoTexto()}  -  ${histRows.length} registros`, marginLeft, y);
+    y += lineHeight * 1.6;
+    printColHeaders();
+  }
+
+  function printColHeaders() {
+    doc.setFont("courier", "bold");
+    doc.text(fila(colDefs.map((c) => c.header)), marginLeft, y);
+    y += lineHeight * 0.9;
+    doc.text("-".repeat(colDefs.reduce((n, c) => n + c.width + 1, 0)), marginLeft, y);
+    y += lineHeight;
+    doc.setFont("courier", "normal");
+  }
+
+  function checkPageBreak() {
+    if (y > pageBottom) {
+      doc.addPage();
+      y = marginTop;
+      printColHeaders();
+    }
+  }
+
+  printHeaderBlock();
+  histRows.slice().reverse().forEach((r) => {
+    checkPageBreak();
+    const valores = [r.fecha_hora_ar || "-", ...cols.map((c) => {
+      const v = r[c.id];
+      return v == null ? "-" : parseFloat(v).toFixed(c.dec ?? 1);
+    })];
+    doc.text(fila(valores), marginLeft, y);
+    y += lineHeight;
+  });
+
+  const nombreArchivo = `emas_${estActual}_historico_reporte.pdf`;
+  // Además de descargarlo, se abre en una pestaña nueva para verlo directo
+  // en el visor de PDF del navegador -- mismo patrón que aq.lemeit.ar.
+  try {
+    const blobUrl = doc.output("bloburl");
+    window.open(blobUrl, "_blank");
+  } catch (e) {
+    console.error("No se pudo abrir el PDF en una pestaña nueva:", e);
+  }
+  doc.save(nombreArchivo);
+}
+
 /* ═══════════════════════════════════════════
-   GRÁFICO
+   GRÁFICO — multi-parámetro (checkboxes) + zoom/pan, armonizado con
+   aq.lemeit.ar. El modo Comparativa (5 estaciones) sigue con su propio
+   dropdown/chart, sin tocar (ver cargarGraficoComparativo más abajo).
 ═══════════════════════════════════════════ */
 let chartInst = null;
+const CHART_PALETTE = ["#D9691F", "#8FB56B", "#5B8DEF", "#D9A441", "#A88FD9", "#D9736F", "#4FB0C6", "#6FA8D9", "#B8D94F"];
+
+// Reconstruye los checkboxes de parámetros para la estación actual. Se usa
+// .onchange= (reemplaza) en vez de addEventListener (que se iría acumulando
+// un listener más por cada cambio de estación) porque cada estación tiene
+// su propia lista de parámetros y este box se reconstruye entero al cambiar.
+function renderParamToggleGrafico() {
+  const est = ESTACIONES[estActual];
+  const box = document.getElementById("param-toggle-grafico");
+  if (!box) return;
+  const params = chartableParams(est);
+  box.innerHTML = params.map((p, i) => {
+    const color = CHART_PALETTE[i % CHART_PALETTE.length];
+    return `<label class="param-toggle-item" data-param="${p.id}">
+      <input type="checkbox" class="chart-param-cb" value="${p.id}" ${i === 0 ? "checked" : ""}>
+      <span class="param-toggle-swatch" style="background:${color}"></span>${p.ico} ${p.nombre}
+    </label>`;
+  }).join("");
+  box.onchange = (e) => {
+    if (!e.target.classList.contains("chart-param-cb")) return;
+    cargarGrafico();
+  };
+}
+
+function getSelectedChartParamsGrafico() {
+  return [...document.querySelectorAll("#param-toggle-grafico .chart-param-cb:checked")].map((cb) => cb.value);
+}
+
 async function cargarGrafico() {
   if (estActual === "comp") { cargarGraficoComparativo(); return; }
+  // Si todavía no se construyeron los checkboxes de parámetros para esta
+  // estación (ej. primera carga de la página, entrando directo a "Gráfico"
+  // sin haber tocado antes el selector de estación -- setEstacion() nunca
+  // corre en ese caso), se construyen ahora para no graficar 0 series.
+  const toggleBox = document.getElementById("param-toggle-grafico");
+  if (toggleBox && !toggleBox.children.length) renderParamToggleGrafico();
   // Mostrar canvas individual, ocultar comparativo
   document.getElementById("chart").style.display = "block";
   document.getElementById("chart-comp").style.display = "none";
-  document.getElementById("graf-titulo").textContent = "Serie temporal";
-  const est   = ESTACIONES[estActual];
-  const param = document.getElementById("sel-param-chart").value;
+  const est = ESTACIONES[estActual];
+  document.getElementById("graf-titulo").textContent = `Serie temporal — ${est.nombre}`;
   const limit = document.getElementById("sel-limit-chart").value;
-  const pid   = est.paramHistorial[param];
-  const dark  = document.documentElement.getAttribute("data-theme") !== "light";
 
   try {
-    const q = est.campoParam === "codigo"
-      ? `select=fecha_hora_ar,valor&codigo=eq.${pid}&order=fecha_hora_utc.desc&limit=${limit}&horas=${limit}`
-      : `select=fecha_hora_ar,valor&parametro=eq.${encodeURIComponent(pid)}&order=insertado_en.desc&limit=${limit}&horas=${limit}`;
+    // "horas" acota por fecha real (no por cantidad de filas): con
+    // estaciones con huecos de datos, el endpoint wide agrupa por timestamp
+    // real, así que esto sigue siendo necesario igual que antes.
+    const rows = await supaFetch(`${est.tabla}/historico`, `horas=${limit}`);
+    renderChartMultiParam(rows);
+  } catch (e) { console.error(e); }
+}
 
-    // Se pide en orden descendente (las N más recientes) y se invierte
-    // para graficar en orden cronológico. Pedir ascendente+limit devolvía
-    // siempre las N filas MÁS VIEJAS de todo el historial. "horas" acota
-    // además por fecha real: sin esto, una estación con huecos de datos
-    // puede traer "las últimas N filas que existan" aunque eso signifique
-    // remontarse meses atrás (el propio valor de "limit" ya es una cantidad
-    // de horas: 48/168/720 = 48h/7 días/30 días).
-    const rows   = (await supaFetch(est.tabla, q)).reverse();
-    const labels = rows.map(r => (r.fecha_hora_ar||"").slice(0,16));
-    const data   = rows.map(r => parseFloat(r.valor));
-    const tc     = dark ? "#C9BEB2" : "#6B5C4E";
-    const gc     = dark ? "rgba(48,54,61,0.5)" : "rgba(208,215,222,0.5)";
-    const ac     = dark ? "#D9691F" : "#9B3D00";
-    const bg     = dark ? "rgba(88,166,255,0.07)" : "rgba(9,105,218,0.07)";
+function buildZoomOptions(maxIndex) {
+  const cs = getComputedStyle(document.documentElement);
+  const accent = cs.getPropertyValue("--accent").trim() || "#D9691F";
+  const opts = {
+    // "ctrl" como modifierKey: sin esto, el arrastre simple dispara PAN y
+    // zoom-por-selección al mismo tiempo (mismo motivo que en aq.lemeit.ar).
+    pan: { enabled: true, mode: "x", modifierKey: "ctrl", onPanComplete: showResetZoomBtn },
+    zoom: {
+      drag: { enabled: true, backgroundColor: accent + "22", borderColor: accent, borderWidth: 1 },
+      wheel: { enabled: true },
+      pinch: { enabled: true },
+      mode: "x",
+      onZoomComplete: showResetZoomBtn,
+    },
+  };
+  if (typeof maxIndex === "number" && maxIndex > 0) {
+    opts.limits = { x: { min: 0, max: maxIndex, minRange: Math.min(4, maxIndex) } };
+  }
+  return opts;
+}
 
-    // Color según estación
-    const colores = { eet:"#D9691F", cfr:"#8FB56B", dc:"#D9736F", cs:"#D9A441", m25:"#5B8DD9" };
-    const estColor = colores[estActual] || ac;
-    const estBg    = estColor + "12";
-    const estNombre = EST_NOMBRES[estActual] || est.nombre;
+function showResetZoomBtn() {
+  const btn = document.getElementById("reset-zoom-btn");
+  if (btn) btn.style.display = "";
+}
 
-    // Unidad del parámetro
-    const paramInfo = est.params.find(p => est.paramHistorial[param] === p.id);
-    const unidad    = paramInfo?.unidad || "";
+function resetChartZoom() {
+  if (chartInst && chartInst.resetZoom) chartInst.resetZoom();
+  const btn = document.getElementById("reset-zoom-btn");
+  if (btn) btn.style.display = "none";
+}
 
-    if (chartInst) chartInst.destroy();
-    chartInst = new Chart(document.getElementById("chart"), {
-      type: "line",
-      data: {
-        labels,
-        datasets: [{ label: `${estNombre} — ${param}`, data,
-          borderColor: estColor, backgroundColor: estBg,
-          borderWidth: 1.5, pointRadius: data.length > 100 ? 0 : 2,
-          pointHoverRadius: 4, tension: 0.3, fill: true, spanGaps: false }]
+function renderChartMultiParam(rows) {
+  const est = ESTACIONES[estActual];
+  const dark = document.documentElement.getAttribute("data-theme") !== "light";
+  const tc = dark ? "#C9BEB2" : "#6B5C4E";
+  const gc = dark ? "rgba(48,54,61,0.5)" : "rgba(208,215,222,0.5)";
+  const labels = rows.map((r) => (r.fecha_hora_ar || "").slice(0, 16));
+  const selected = getSelectedChartParamsGrafico();
+  const paramsAll = chartableParams(est);
+
+  // Eje X numérico (linear), no "category": lo necesita chartjs-plugin-zoom
+  // para calcular bien el rango en zooms anidados (mismo motivo que aq).
+  const scales = {
+    x: {
+      type: "linear",
+      min: 0,
+      max: Math.max(rows.length - 1, 0),
+      ticks: {
+        color: tc, font: { family: "JetBrains Mono", size: 9 }, maxTicksLimit: 12,
+        callback: (v) => labels[Math.round(v)] ?? "",
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { labels:{ color:tc, font:{family:"JetBrains Mono",size:11}, boxWidth:12 } },
-          tooltip: { backgroundColor:dark?"#221E18":"#fff", borderColor:dark?"#3D3028":"#E0D9CC",
-            borderWidth:1, titleColor:tc, bodyColor:tc,
-            titleFont:{family:"JetBrains Mono",size:10}, bodyFont:{family:"JetBrains Mono",size:12},
-            callbacks: { label: ctx => `${ctx.parsed.y.toFixed(2)} ${unidad}` }
-          }
-        },
-        scales: {
-          x: { ticks:{color:tc,font:{family:"JetBrains Mono",size:9},maxTicksLimit:12,maxRotation:45}, grid:{color:gc} },
-          y: { ticks:{color:tc,font:{family:"JetBrains Mono",size:10},
-                callback: v => `${v} ${unidad}`}, grid:{color:gc} }
-        }
-      }
+      grid: { color: gc },
+    },
+  };
+
+  const datasets = [];
+  const soloUnParam = selected.length === 1;
+  selected.forEach((key, i) => {
+    const meta = paramsAll.find((p) => String(p.id) === String(key));
+    if (!meta) return;
+    const color = CHART_PALETTE[i % CHART_PALETTE.length];
+    const axisId = `y_${key}`;
+    datasets.push({
+      label: meta.unidad ? `${meta.nombre} (${meta.unidad})` : meta.nombre,
+      data: rows.map((r, idx) => ({ x: idx, y: r[key] != null ? parseFloat(r[key]) : null })),
+      borderColor: color,
+      backgroundColor: color + "14",
+      borderWidth: soloUnParam ? 1.5 : 2,
+      pointRadius: 0,
+      tension: 0.3,
+      fill: soloUnParam,
+      spanGaps: false,
+      yAxisID: axisId,
     });
-  } catch(e) { console.error(e); }
+    scales[axisId] = {
+      position: i % 2 === 0 ? "left" : "right",
+      ticks: { color, font: { family: "JetBrains Mono", size: 10 } },
+      grid: { color: gc, drawOnChartArea: i === 0 },
+      title: {
+        display: true,
+        text: meta.unidad ? `${meta.nombre} (${meta.unidad})` : meta.nombre,
+        color, font: { family: "JetBrains Mono", size: 10 },
+      },
+    };
+  });
+
+  if (chartInst) chartInst.destroy();
+  chartInst = new Chart(document.getElementById("chart"), {
+    type: "line",
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { display: datasets.length > 1, labels: { color: tc, font: { family: "JetBrains Mono", size: 10 } } },
+        tooltip: {
+          backgroundColor: dark ? "#221E18" : "#fff", borderColor: dark ? "#3D3028" : "#E0D9CC",
+          borderWidth: 1, titleColor: tc, bodyColor: dark ? "#F2ECE4" : "#2A211A",
+          titleFont: { family: "JetBrains Mono", size: 10 }, bodyFont: { family: "JetBrains Mono", size: 12 },
+          callbacks: { title: (items) => (items.length ? labels[items[0].dataIndex] ?? "" : "") },
+        },
+        zoom: buildZoomOptions(rows.length - 1),
+      },
+      scales,
+    },
+  });
+  const resetBtn = document.getElementById("reset-zoom-btn");
+  if (resetBtn) resetBtn.style.display = "none";
 }
 
 /* ═══════════════════════════════════════════

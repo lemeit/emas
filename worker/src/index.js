@@ -218,6 +218,86 @@ async function handleMediciones(env, tabla, params) {
   return json(filas);
 }
 
+// ── Histórico "wide" (una fila por timestamp, una columna por parámetro) ───
+// `mediciones` guarda cada parámetro en su propia fila ("long format": una
+// fila = una estación + un parámetro + un instante). Para armar una tabla
+// tipo planilla (igual a como aq.lemeit.ar/api/historico ya devuelve sus
+// datos, con PM/CO2/VOC/etc. como columnas de una misma fila) hace falta
+// "pivotear": agrupar todas las filas que comparten el mismo fecha_hora_utc
+// -- que es el mismo instante en el que la estación reportó todos sus
+// sensores juntos -- en un solo objeto con una clave por parámetro.
+//
+// Se hace en JS después de traer los datos en long format, en vez de armar
+// un pivot dinámico en SQL (un CASE WHEN por columna): evita tener que
+// conocer de antemano la lista de parámetros de cada estación acá en el
+// Worker (esa lista ya vive en ESTACIONES[].params del frontend) y sigue
+// funcionando aunque una estación sume/cambie parámetros con el tiempo.
+function pivotLongToWide(results, estacion) {
+  const grouped = new Map(); // fecha_hora_utc -> objeto de esa fila ancha
+  const colOrder = []; // orden de primera aparición de cada columna
+
+  for (const r of results) {
+    // Igual criterio que el resto del Worker/frontend (est.campoParam):
+    // EET identifica su parámetro por código numérico, el resto por nombre.
+    const key = estacion === "EMA-EET" ? String(r.codigo) : r.parametro;
+    if (!grouped.has(r.fecha_hora_utc)) {
+      grouped.set(r.fecha_hora_utc, {});
+    }
+    const row = grouped.get(r.fecha_hora_utc);
+    if (!(key in row) && !colOrder.includes(key)) colOrder.push(key);
+    row[key] = r.valor;
+  }
+
+  // `results` llega ordenado por fecha_hora_utc DESC, y un Map conserva el
+  // orden de inserción de sus claves -> iterar grouped ya da los timestamps
+  // más recientes primero. Se arma cada fila con columnas en orden estable
+  // (fecha primero, después cada parámetro siempre en la misma posición)
+  // para que el CSV no desalinee encabezados fila a fila.
+  const rows = [];
+  for (const [fechaUtc, valores] of grouped) {
+    const row = { fecha_hora_ar: utcAFechaAr(fechaUtc), fecha_hora_utc: fechaUtc };
+    for (const k of colOrder) row[k] = k in valores ? valores[k] : null;
+    rows.push(row);
+  }
+  return rows;
+}
+
+async function handleHistoricoWide(env, tabla, params) {
+  const estacion = TABLE_MAP[tabla];
+  const limit = Math.min(parseInt(params.get("limit") || "3000", 10) || 3000, 20000);
+
+  let where = "estacion = ?";
+  const binds = [estacion];
+
+  const desde = params.get("desde");
+  const hasta = params.get("hasta");
+  if (desde) { where += " AND fecha_hora_utc >= ?"; binds.push(desde); }
+  if (hasta) { where += " AND fecha_hora_utc <= ?"; binds.push(hasta); }
+
+  const horas = parseInt(params.get("horas") || "", 10);
+  if (!desde && !hasta && horas > 0) {
+    where += " AND fecha_hora_utc >= datetime('now', '-' || ? || ' hours')";
+    binds.push(horas);
+  }
+
+  // Sin LIMIT en la consulta SQL: el tope de filas se aplica después de
+  // pivotear (limita cantidad de TIMESTAMPS, no de filas crudas -- cada
+  // timestamp puede traer varias filas largas, una por parámetro).
+  const sql = `SELECT codigo, parametro, valor, fecha_hora_utc
+               FROM mediciones WHERE ${where} ORDER BY fecha_hora_utc DESC`;
+
+  const { results } = await env.DB.prepare(sql).bind(...binds).all();
+  let wideRows = pivotLongToWide(results, estacion).slice(0, limit);
+  // La API de aq devuelve el histórico en orden ascendente (más viejo primero)
+  // y así lo espera también el frontend ya portado (arma la tabla/gráfico y
+  // recién al mostrar hace .reverse()) -- se ordena igual acá para que ambos
+  // portales se comporten parejo.
+  wideRows.reverse();
+
+  if (wantsCsv(params)) return csvResponse(wideRows, `${tabla}_historico.csv`);
+  return json(wideRows);
+}
+
 async function handleTemperaturaComparativa(env, params) {
   const limit = Math.min(parseInt(params.get("limit") || "500", 10) || 500, 20000);
   // "horas": ventana de calendario real (ver handleMediciones). Cuando viene
@@ -354,6 +434,20 @@ export default {
     if (tileMatch) {
       const [, style, z, x, y, retina] = tileMatch;
       return proxyCartoTile(env, style, z, x, y, retina || "");
+    }
+
+    // /rest/v1/:tabla/historico -- histórico "wide" para la tabla/CSV/PDF de
+    // la pestaña Historial (ver pivotLongToWide). Rutas hermanas, separadas
+    // por claridad de lo que ya devuelve /rest/v1/:tabla (long format).
+    const wideMatch = path.match(/^\/rest\/v1\/([a-z0-9_]+)\/historico$/);
+    if (wideMatch) {
+      const tabla = wideMatch[1];
+      if (!TABLE_MAP[tabla]) return json({ error: `tabla desconocida: ${tabla}` }, 404);
+      try {
+        return await handleHistoricoWide(env, tabla, url.searchParams);
+      } catch (err) {
+        return json({ error: err.message }, 500);
+      }
     }
 
     const match = path.match(/^\/rest\/v1\/([a-z0-9_]+)$/);
