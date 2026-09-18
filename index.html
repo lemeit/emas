@@ -730,6 +730,17 @@ canvas{width:100% !important}
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.2.0/chartjs-plugin-zoom.min.js';document.head.appendChild(s);"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js';document.head.appendChild(s);"></script>
 <script>
+  // Fuerza una resolución mínima de dibujo de 2x en TODOS los charts, sin
+  // importar lo que Chart.js detecte de window.devicePixelRatio en este
+  // navegador/pantalla puntual -- se reportó texto de ejes/leyendas
+  // "pixelado, como más grande" en la pestaña Rosa de vientos, síntoma
+  // clásico de un canvas dibujado a una resolución interna más baja que la
+  // que después se estira en CSS. No se pudo reproducir en el entorno de
+  // pruebas (siempre midió devicePixelRatio correctamente ahí), así que en
+  // vez de perseguir la causa exacta se fuerza un piso alto y seguro: sale
+  // un poco más pesado de dibujar, pero nunca puede quedar borroso.
+  if (window.Chart && window.Chart.defaults) Chart.defaults.devicePixelRatio = Math.max(2, window.devicePixelRatio || 1);
+
   // chartjs-plugin-zoom puede cargar después de este bloque (viene de un
   // <script src> separado) -- se registra en el evento "load" de la propia
   // página, igual que en aq, en vez de asumir que ya está disponible acá.
